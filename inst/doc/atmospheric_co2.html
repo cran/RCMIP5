@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+<meta name="author" content="Ben Bond-Lamberty and Corinne Hartin" />
+
+<meta name="date" content="2014-10-14" />
+
+<title>Atmospheric CO2</title>
+
+
+
+
+<link href="data:text/css,body%20%7B%0A%20%20background%2Dcolor%3A%20%23fff%3B%0A%20%20margin%3A%201em%20auto%3B%0A%20%20max%2Dwidth%3A%20700px%3B%0A%20%20overflow%3A%20visible%3B%0A%20%20padding%2Dleft%3A%202em%3B%0A%20%20padding%2Dright%3A%202em%3B%0A%20%20font%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0A%20%20font%2Dsize%3A%2014px%3B%0A%20%20line%2Dheight%3A%201%2E35%3B%0A%7D%0A%0A%23header%20%7B%0A%20%20text%2Dalign%3A%20center%3B%0A%7D%0A%0A%23TOC%20%7B%0A%20%20clear%3A%20both%3B%0A%20%20margin%3A%200%200%2010px%2010px%3B%0A%20%20padding%3A%204px%3B%0A%20%20width%3A%20400px%3B%0A%20%20border%3A%201px%20solid%20%23CCCCCC%3B%0A%20%20border%2Dradius%3A%205px%3B%0A%0A%20%20background%2Dcolor%3A%20%23f6f6f6%3B%0A%20%20font%2Dsize%3A%2013px%3B%0A%20%20line%2Dheight%3A%201%2E3%3B%0A%7D%0A%20%20%23TOC%20%2Etoctitle%20%7B%0A%20%20%20%20font%2Dweight%3A%20bold%3B%0A%20%20%20%20font%2Dsize%3A%2015px%3B%0A%20%20%20%20margin%2Dleft%3A%205px%3B%0A%20%20%7D%0A%0A%20%20%23TOC%20ul%20%7B%0A%20%20%20%20padding%2Dleft%3A%2040px%3B%0A%20%20%20%20margin%2Dleft%3A%20%2D1%2E5em%3B%0A%20%20%20%20margin%2Dtop%3A%205px%3B%0A%20%20%20%20margin%2Dbottom%3A%205px%3B%0A%20%20%7D%0A%20%20%23TOC%20ul%20ul%20%7B%0A%20%20%20%20margin%2Dleft%3A%20%2D2em%3B%0A%20%20%7D%0A%20%20%23TOC%20li%20%7B%0A%20%20%20%20line%2Dheight%3A%2016px%3B%0A%20%20%7D%0A%0Atable%20%7B%0A%20%20margin%3A%201em%20auto%3B%0A%20%20border%2Dwidth%3A%201px%3B%0A%20%20border%2Dcolor%3A%20%23DDDDDD%3B%0A%20%20border%2Dstyle%3A%20outset%3B%0A%20%20border%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0A%20%20border%2Dwidth%3A%202px%3B%0A%20%20padding%3A%205px%3B%0A%20%20border%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0A%20%20border%2Dwidth%3A%201px%3B%0A%20%20border%2Dstyle%3A%20inset%3B%0A%20%20line%2Dheight%3A%2018px%3B%0A%20%20padding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0A%20%20border%2Dleft%2Dstyle%3A%20none%3B%0A%20%20border%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0A%20%20background%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0A%0Ap%20%7B%0A%20%20margin%3A%200%2E5em%200%3B%0A%7D%0A%0Ablockquote%20%7B%0A%20%20background%2Dcolor%3A%20%23f6f6f6%3B%0A%20%20padding%3A%200%2E25em%200%2E75em%3B%0A%7D%0A%0Ahr%20%7B%0A%20%20border%2Dstyle%3A%20solid%3B%0A%20%20border%3A%20none%3B%0A%20%20border%2Dtop%3A%201px%20solid%20%23777%3B%0A%20%20margin%3A%2028px%200%3B%0A%7D%0A%0Adl%20%7B%0A%20%20margin%2Dleft%3A%200%3B%0A%7D%0A%20%20dl%20dd%20%7B%0A%20%20%20%20margin%2Dbottom%3A%2013px%3B%0A%20%20%20%20margin%2Dleft%3A%2013px%3B%0A%20%20%7D%0A%20%20dl%20dt%20%7B%0A%20%20%20%20font%2Dweight%3A%20bold%3B%0A%20%20%7D%0A%0Aul%20%7B%0A%20%20margin%2Dtop%3A%200%3B%0A%7D%0A%20%20ul%20li%20%7B%0A%20%20%20%20list%2Dstyle%3A%20circle%20outside%3B%0A%20%20%7D%0A%20%20ul%20ul%20%7B%0A%20%20%20%20margin%2Dbottom%3A%200%3B%0A%20%20%7D%0A%0Apre%2C%20code%20%7B%0A%20%20background%2Dcolor%3A%20%23f7f7f7%3B%0A%20%20border%2Dradius%3A%203px%3B%0A%20%20color%3A%20%23333%3B%0A%7D%0Apre%20%7B%0A%20%20white%2Dspace%3A%20pre%2Dwrap%3B%20%20%20%20%2F%2A%20Wrap%20long%20lines%20%2A%2F%0A%20%20border%2Dradius%3A%203px%3B%0A%20%20margin%3A%205px%200px%2010px%200px%3B%0A%20%20padding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0A%20%20background%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0A%0Acode%20%7B%0A%20%20font%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0A%20%20font%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0A%20%20padding%3A%202px%200px%3B%0A%7D%0A%0Adiv%2Efigure%20%7B%0A%20%20text%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0A%20%20background%2Dcolor%3A%20%23FFFFFF%3B%0A%20%20padding%3A%202px%3B%0A%20%20border%3A%201px%20solid%20%23DDDDDD%3B%0A%20%20border%2Dradius%3A%203px%3B%0A%20%20border%3A%201px%20solid%20%23CCCCCC%3B%0A%20%20margin%3A%200%205px%3B%0A%7D%0A%0Ah1%20%7B%0A%20%20margin%2Dtop%3A%200%3B%0A%20%20font%2Dsize%3A%2035px%3B%0A%20%20line%2Dheight%3A%2040px%3B%0A%7D%0A%0Ah2%20%7B%0A%20%20border%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0A%20%20padding%2Dtop%3A%2010px%3B%0A%20%20padding%2Dbottom%3A%202px%3B%0A%20%20font%2Dsize%3A%20145%25%3B%0A%7D%0A%0Ah3%20%7B%0A%20%20border%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0A%20%20padding%2Dtop%3A%2010px%3B%0A%20%20font%2Dsize%3A%20120%25%3B%0A%7D%0A%0Ah4%20%7B%0A%20%20border%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0A%20%20margin%2Dleft%3A%208px%3B%0A%20%20font%2Dsize%3A%20105%25%3B%0A%7D%0A%0Ah5%2C%20h6%20%7B%0A%20%20border%2Dbottom%3A%201px%20solid%20%23ccc%3B%0A%20%20font%2Dsize%3A%20105%25%3B%0A%7D%0A%0Aa%20%7B%0A%20%20color%3A%20%230033dd%3B%0A%20%20text%2Ddecoration%3A%20none%3B%0A%7D%0A%20%20a%3Ahover%20%7B%0A%20%20%20%20color%3A%20%236666ff%3B%20%7D%0A%20%20a%3Avisited%20%7B%0A%20%20%20%20color%3A%20%23800080%3B%20%7D%0A%20%20a%3Avisited%3Ahover%20%7B%0A%20%20%20%20color%3A%20%23BB00BB%3B%20%7D%0A%20%20a%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0A%20%20%20%20text%2Ddecoration%3A%20underline%3B%20%7D%0A%20%20a%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0A%20%20%20%20text%2Ddecoration%3A%20underline%3B%20%7D%0A%0A%2F%2A%20Class%20described%20in%20https%3A%2F%2Fbenjeffrey%2Ecom%2Fposts%2Fpandoc%2Dsyntax%2Dhighlighting%2Dcss%0A%20%20%20Colours%20from%20https%3A%2F%2Fgist%2Egithub%2Ecom%2Frobsimmons%2F1172277%20%2A%2F%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%2F%2A%20Keyword%20%2A%2F%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%2F%2A%20DataType%20%2A%2F%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%2F%2A%20DecVal%20%28decimal%20values%29%20%2A%2F%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%2F%2A%20BaseN%20%2A%2F%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%2F%2A%20Float%20%2A%2F%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%2F%2A%20Char%20%2A%2F%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%2F%2A%20String%20%2A%2F%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%2F%2A%20Comment%20%2A%2F%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%2F%2A%20OtherToken%20%2A%2F%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%2F%2A%20AlertToken%20%2A%2F%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%2F%2A%20Function%20calls%20%2A%2F%20%0Acode%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%2F%2A%20ErrorTok%20%2A%2F%0A%0A" rel="stylesheet" type="text/css" />
+
+</head>
+
+<body>
+
+
+
+<div id="header">
+<h1 class="title">Atmospheric CO2</h1>
+<h4 class="author"><em>Ben Bond-Lamberty and Corinne Hartin</em></h4>
+<h4 class="date"><em>2014-10-14</em></h4>
+</div>
+
+
+<p>One common use for CMIP5 data, and the <code>RCMIP5</code> package, is to extract the global mean of some variable of interest for particular models, experiments, and/or ensembles. Here we give an example of this, computing the global mean atmospheric CO2 value by year.</p>
+<div id="make-sure-the-required-data-are-present" class="section level2">
+<h2>Make sure the required data are present</h2>
+<p>As the package documentation notes (see e.g. <a href="http://gitcom.com/JGCRI/RCMIP">http://gitcom.com/JGCRI/RCMIP</a>) you first have to download the necessary data from an Earth System Grid Federation node; RCMIP5 won’t do this for you. Assuming this step is complete, then, we check to make sure all the data we’ll need are present. First load information about all the CMIP5 files available:</p>
+<pre><code>&gt; library(RCMIP5)
+&gt; mypath &lt;- &quot;~/my/cmip5/files/&quot;
+&gt; c5files &lt;- getFileInfo(mypath)</code></pre>
+<p>By default, <code>getFileInfo</code> will recursively scan the entire directory tree and return a data frame containing the following information:</p>
+<ul>
+<li>File path</li>
+<li>File name</li>
+<li>Variable name</li>
+<li>Domain</li>
+<li>Model</li>
+<li>Experiment (typically historical, rcp45, rcp85, etc.)</li>
+<li>Ensemble</li>
+<li>Time<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a></li>
+<li>Size (kb)</li>
+</ul>
+<p>We’re interested in the CO2 files; more specifically, we want to know whether all the necessary files have been downloaded.</p>
+<pre><code>&gt; co2files &lt;- subset(c5files, variable==&quot;co2&quot;)
+&gt; co2filechk &lt;- checkTimePeriod(co2files)
+&gt; co2filechk[-1]  # don't display the file path</code></pre>
+<p>For the CMIP5 data we have<a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a>, this produces the following output:</p>
+<pre><code>  experiment   model variable ensemble         yrStr allHere startDate  endDate files
+1      rcp85 CanESM2      co2   r1i1p1 200601-210012    TRUE      2006 2100.917     1
+2      rcp85 CanESM2      co2   r2i1p1 200601-210012    TRUE      2006 2100.917     1</code></pre>
+<p>Here we see that two ensembles are available, both from the ‘rcp85’ experiment run by the ‘CanESM2’ model. Crucially, both are complete: the <code>allHere</code> flag is TRUE (it would be FALSE if, for example, we’d downloaded 2006-2049 and 2051-2100 but forgotten year 2050).</p>
+</div>
+<div id="load-the-data" class="section level2">
+<h2>Load the data</h2>
+<p>Time to load these data into memory. To do so we use the <code>loadCMIP5</code> function, telling to it to load the ‘co2’ variable from the ‘CanESM2’ model running the ‘rcp85’ experiment. Note that here we’re using the <code>yearRange</code> parameter to limit the data to five years:</p>
+<pre><code>&gt; co2 &lt;- loadCMIP5(&quot;co2&quot;, &quot;CanESM2&quot;, &quot;rcp85&quot;, path=mypath, verbose=T, yearRange=c(2006, 2010))
+Averaging ensembles: r1i1p1 r2i1p1 
+Loading ~/my/cmip5/files/co2_Amon_CanESM2_rcp85_r1i1p1_200601-210012.nc 
+- co2 dimension names: lon lat plev time 
+- loading only timeslices 1 - 60 
+- data 128 64 22 60 
+Loading ~/my/cmip5/files/co2_Amon_CanESM2_rcp85_r2i1p1_200601-210012.nc 
+- co2 dimension names: lon lat plev time 
+- loading only timeslices 1 - 60 
+- data 128 64 22 60 </code></pre>
+<p><code>loadCMIP5</code> reports that there are two ensembles to average (r1i1p1 and r2i1p1), the name of each file it loads, the dimension names, the fact that it’s only reading the first five years, and the resulting data array size: 128 (lon) x 64 (lat) x 22 (plev, which will be renamed ‘Z’ when read in) x 60 (time).</p>
+</div>
+<div id="examining-the-data" class="section level2">
+<h2>Examining the data</h2>
+<p>Summarize these data:</p>
+<pre><code>&gt; summary(co2)
+CMIP5 data 
+Variable: co2 (1e-6) from model CanESM2
+Data range: 379.81-390.28  Mean: 384.85
+Experiment: rcp85 - 2 ensemble(s)
+Spatial dimensions: lon [128] lat [64] Z [22]
+Time dimension: mon [60] days since 1850-1-1 
+Size: 82.5 MB
+Provenance has 6 entries</code></pre>
+<p>Here we see the name of the variable, model, experiment, the fact that this came from two ensembles, the data range and spatial dimensions, time dimensions and frequency (‘mon’ - monthly), size in memory, and a note about the provenance (see below). Everything looks good. Assuming the <code>ggplot2</code> package is installed, we might want to make a quick plot of the data to check:</p>
+<pre><code>&gt; worldPlot(co2, time=1:12)  # first 12 months, i.e. all of 2006</code></pre>
+<p>The resulting plot isn’t very interesting, as CO2 is a well-mixed gas, but would be useful if we were working with a spatially variable output.</p>
+</div>
+<div id="compute-global-means" class="section level2">
+<h2>Compute global means</h2>
+<p>There are three steps in our processing chain. First, we want to filter the data: this model reports atmospheric CO2 for 22 different levels (the ‘Z’ dimension), and we’re only interested in the level closest to the surface. Second, these are monthly data, and we’re interested in an annual average. Third, we want to reduce the gridded data to a global mean value. This can be done as follows:</p>
+<pre><code>&gt; co2surf &lt;- filterDimensions(co2, Zs=co2$Z[1], verbose=T)
+Filtered by Z, dim = 128 64 1 60 
+&gt; co2annual &lt;- makeAnnualStat(co2surf, verbose=T)
+Running in serial
+Took 6.41 s
+&gt; co2summary &lt;- makeGlobalStat(co2annual, verbose=T)
+No grid areas supplied; using calculated values
+Calculating grid cell areas...
+Running in serial
+Took 0.03 s</code></pre>
+<p>The second step, <code>makeAnnualStat</code>, was relatively slow (and can be <em>very</em> slow for large datasets).<a href="#fn3" class="footnoteRef" id="fnref3"><sup>3</sup></a> Also note that because we didn’t supply any grid cell area data to <code>makeAnnualStat</code>, it computed its own. Now we look at the resulting data:</p>
+<pre><code>&gt; summary(co2summary)
+CMIP5 data (annual summary of 12 months) (filtered) 
+Variable: weighted.mean of co2 (1e-6) from model CanESM2
+Data range: 380.72-389.22  Mean: 384.85
+Experiment: rcp85 - 2 ensemble(s)
+Spatial dimensions: lon [0] lat [0] Z [1] 
+Time dimension: years (summarized) [5] days since 1850-1-1 
+Size: 0.0 MB
+Provenance has 10 entries</code></pre>
+<p>The summary reports that <code>co2annual</code> is an annual summary of filtered data, and a weighted mean (from the <code>makeGlobalStat</code> operation). Note the dimensions of the data: no longitude or latitude (since we summarized these to a global mean); a single level (Z) that’s the one filtered to; and 5 time points. The summary also explicitly tells us that these data have been filtered and summarized. At this point, we may want to convert this object to a regular data frame for easy plotting:</p>
+<pre><code>&gt; co2_df &lt;- as.data.frame(co2summary)
+&gt; co2_df
+      Z time    value
+1 1e+05 2006 380.7173
+2 1e+05 2007 382.6840
+3 1e+05 2008 384.7202
+4 1e+05 2009 386.9201
+5 1e+05 2010 389.2190
+&gt; plot(df$time, df$value, type='b')</code></pre>
+<p><img src="data:image/png;base64,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" alt="plot of chunk unnamed-chunk-1" /></p>
+</div>
+<div id="provenance" class="section level2">
+<h2>Provenance</h2>
+<p>With each operation we perform, <code>RCMIP5</code> adds entries to the object’s <em>provenance</em>, a data frame that records various information about the data’s history. If we look at the provenance of the <code>co2summary</code> object, we see a record of the steps performed that produced it:</p>
+<pre><code>&gt; co2summary$provenance[c(1,3)]
+             timestamp                                                 message
+1  2014-10-07 15:46:37           RCMIP5 0.1 under R version 3.1.0 (2014-04-10)
+2  2014-10-07 15:46:37   Loaded co2_Amon_CanESM2_rcp85_r1i1p1_200601-210012.nc
+3  2014-10-07 15:46:39                          Merged (*) provenance follows:
+21 2014-10-07 15:46:39 * Loaded co2_Amon_CanESM2_rcp85_r2i1p1_200601-210012.nc
+5  2014-10-07 15:46:39                                   Added ensemble r2i1p1
+6  2014-10-07 15:46:40               Computed mean of ensembles: r1i1p1 r2i1p1
+7  2014-10-07 15:46:41               Filtered for Zs in range [ 1e+05, 1e+05 ]
+8  2014-10-07 15:46:47                   Calculated mean for years 2006 - 2010
+9  2014-10-07 15:46:47    About to compute global stat. Grid areas calculated.
+10 2014-10-07 15:46:48                    Computed global weighted.mean of co2</code></pre>
+<p>The provenance also records what function (with parameter values) wrote each message, the data dimensions at each step, and a checksum (MD5 hash) of the data. The provenance can be exported, saved alongside the data, etc.</p>
+</div>
+<div id="next-steps-and-final-notes" class="section level2">
+<h2>Next steps and final notes</h2>
+<p>As noted above, we can simply use <code>as.data.frame</code> to convert our <code>cmip5data</code> object to a standard data frame. We could also <code>saveNetCDF(co2summary)</code> to save it as a netcdf file, for example to send to a colleague; the provenance is saved as netcdf global attributes, and optionally as an accompanying text file.</p>
+<p>Given the above example, it’s straightforward to process a whole collection of CMIP5 data-for example, all the co2 data across experiments and models. For example:</p>
+<pre><code>for(mo in co2filechk$model) {
+    for(ex in co2filechk$experiment) {
+        co2 &lt;- loadCMIP5(variable=&quot;co2&quot;, model=mo, experiment=ex, path=mypath)
+        #
+        # ... process ...
+        # 
+        co2_df &lt;- as.data.frame(co2)
+        co2_df$model &lt;- mo
+        co2_df$experiment &lt;- ex
+        #
+        # ... save, or combine with running results
+        #
+    }
+}</code></pre>
+<p>This concludes the <strong>Atmospheric CO2</strong> vignette.</p>
+</div>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>Unless it’s an ‘fx’ (fixed) domain file, with no time dimension.<a href="#fnref1">↩</a></p></li>
+<li id="fn2"><p>Again, this depends on what you’ve downloaded from the ESGF! Naively running the commands in this vignette, without the appropriate CMIP5 data, will produce nothing but errors.<a href="#fnref2">↩</a></p></li>
+<li id="fn3"><p>All the <code>make...Stat</code> functions have a optional <code>parallel</code> parameter that will use the <code>foreach</code> package and any available parallelized backend.<a href="#fnref3">↩</a></p></li>
+</ol>
+</div>
+
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
