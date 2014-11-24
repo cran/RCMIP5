@@ -5,7 +5,7 @@
 ## 
 ## This script does not demonstrate the functionality of getFileInfo(),
 ## checkTimePeriod(), or loadCMIP5(), all of which require
-## existing CMIP5 netcdf files.
+## existing CMIP5 NetCDF files.
 readline("<return>")
 
 ## Create random (dummy) data
@@ -57,14 +57,10 @@ readline("<return>")
 print(globalmean$provenance[c("timestamp","message")])
 readline("<return>")
 
-## Visualization of the first 12 months of data:
-print(worldPlot(historical, time=1:12))
-readline("<return>")
-
 ## It's easy to convert 'cmip5data' structures to data frames:
 print(head(as.data.frame(historical)))
 readline("<return>")
 
-## ...or save them as netcdf files. (Not run.)
+## ...or save them as NetCDF files. (Not run.)
 
 ## All done!

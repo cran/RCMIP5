@@ -3,8 +3,7 @@
 \alias{makeGlobalStat}
 \title{Compute global statistic of a variable}
 \usage{
-makeGlobalStat(x, area = NULL, verbose = FALSE, parallel = FALSE,
-  FUN = weighted.mean, ...)
+makeGlobalStat(x, area = NULL, verbose = FALSE, FUN = weighted.mean, ...)
 }
 \arguments{
 \item{x}{A \code{\link{cmip5data}} object}
@@ -12,8 +11,6 @@ makeGlobalStat(x, area = NULL, verbose = FALSE, parallel = FALSE,
 \item{area}{An area \code{\link{cmip5data}} object}
 
 \item{verbose}{logical. Print info as we go?}
-
-\item{parallel}{logical. Parallelize if possible?}
 
 \item{FUN}{function. Function to apply across grid}
 
@@ -26,43 +23,27 @@ same as the caller for Z (if present) and time, but lon and lat are reduced to
 of cells in the spatial grid.
 }
 \description{
-We frequently want a global summary for CMIP5 data, usually weighted by the
-grid cell areas used by each particular model. This function does that. If no
-area weighting is supplied, a warning is given. The default statistic is \link{weighted.mean},
+Calculates a global summary for CMIP5 data, usually weighted by the
+grid cell areas used by each particular model. If no
+area weighting is supplied, one is computed based on the lon/lat
+values of \code{x}. The default statistic is \link{weighted.mean},
 but any summary function that returns a numeric result can be used.
 }
 \details{
-If a Z dimension is present, the stat function is calculated
-for all combinations of these. No status bar is printed when processing in parallel,
-but progress is logged to a file (call with verbose=T) that can be monitored.
-
+The stat function is calculated for all combinations of lon,
+lat, and Z (if present).
 This function is more complicated than the other makeXxxStat functions, because
 it provides explicit support for area-weighted functions. We expect that
 weighted.mean and a weighted sum will be the most frequent
 calculations needed. The former is built into R, and the latter can generally
 be calculated as weighted.mean * sum(area). A user-supplied stat function must
 follow the weighted.mean syntax, in particular
-accepting parameters 'x' (data) and 'w' (weights) of equal size.
-
-If the user requests parallel processing (via parallel=T) makeGlobalStat
-(i) attempts to load the \code{doParallel} package, and (ii) registers it as a
-parallel backend \emph{unless} the user has already done this (e.g. set up a
-virtual cluster with particular, desired characteristics). In that case,
-makeGlobalStat respects the existing cluster.
-}
-\note{
-The \code{val} component of the returned object will always be the same structure
-as \code{x}, i.e. of dimensions {1, 1, z, t}.
+accepting parameters 'x' (data) and 'w' (weights) of equal size, as well as dots(...).
 }
 \examples{
 d <- cmip5data(1970:1975)   # sample data
 makeGlobalStat(d)
 summary(makeGlobalStat(d))
-\dontrun{
-library(doParallel)
-registerDoParallel()
-summary(makeGlobalStat(d, verbose=TRUE, parallel=TRUE))
-}
 }
 \seealso{
 \code{\link{makeAnnualStat}} \code{\link{makeZStat}} \code{\link{makeMonthlyStat}}

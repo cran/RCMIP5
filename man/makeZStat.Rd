@@ -3,14 +3,12 @@
 \alias{makeZStat}
 \title{Compute Z-dimension statistic of a variable}
 \usage{
-makeZStat(x, verbose = FALSE, parallel = FALSE, FUN = mean, ...)
+makeZStat(x, verbose = FALSE, FUN = mean, ...)
 }
 \arguments{
 \item{x}{A \code{\link{cmip5data}} object}
 
 \item{verbose}{logical. Print info as we go?}
-
-\item{parallel}{logical. Parallelize if possible?}
 
 \item{FUN}{function. Function to apply across Zs}
 
@@ -24,34 +22,15 @@ Z field is removed.
 }
 \description{
 Some CMIP5 data are four-dimensional: in addition to longitude, latitude,
-and time, they include a Z dimension (typically encoded in the netcdf file as
+and time, they include a Z dimension (typically encoded in the NetCDF file as
 'depth' or 'lev'). This function computes a summary statistic for all Z values.
 The default statistic is \link{mean}, but any summary
 function that returns a numeric result (including weighted.mean, if you
 want to apply weights) can be used.
 }
-\details{
-No status bar is printed when processing in parallel,
-but progress is logged to a file (call with verbose=T) that can be monitored.
-
-If the user requests parallel processing (via parallel=T) makeZStat
-(i) attempts to load the \code{doParallel} package, and (ii) registers it as a
-parallel backend \emph{unless} the user has already done this (e.g. set up a
-virtual cluster with particular, desired characteristics). In that case,
-makeZStat respects the existing cluster.
-}
-\note{
-The \code{val} component of the returned object will always be the same structure
-as \code{x}, i.e. of dimensions {x, y, 1, t}.
-}
 \examples{
 d <- cmip5data(1970:1975, Z=TRUE)   # sample data
 makeZStat(d)
-\dontrun{
-library(doParallel)
-registerDoParallel()
-summary(makeZStat(d, verbose=TRUE, parallel=TRUE))
-}
 summary(makeZStat(d, FUN=sd))
 }
 \seealso{

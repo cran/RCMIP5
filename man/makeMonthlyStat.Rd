@@ -3,14 +3,12 @@
 \alias{makeMonthlyStat}
 \title{Compute monthly statistic of a variable}
 \usage{
-makeMonthlyStat(x, verbose = FALSE, parallel = FALSE, FUN = mean, ...)
+makeMonthlyStat(x, verbose = FALSE, FUN = mean, ...)
 }
 \arguments{
 \item{x}{A \code{\link{cmip5data}} object}
 
 \item{verbose}{logical. Print info as we go?}
-
-\item{parallel}{logical. Parallelize if possible?}
 
 \item{FUN}{function. Function to apply across months of year}
 
@@ -28,29 +26,13 @@ does that for monthly data. The default statistic is \link{mean}, but any
 summary function that returns a numeric result can be used.
 }
 \details{
-If a Z dimension is present, the stat function is calculated
-for all combinations of these. No status bar is printed when processing in parallel,
-but progress is logged to a file (call with verbose=T) that can be monitored.
-
-If the user requests parallel processing (via parallel=T) makeMonthlyStat
-(i) attempts to load the \code{doParallel} package, and (ii) registers it as a
-parallel backend \emph{unless} the user has already done this (e.g. set up a
-virtual cluster with particular, desired characteristics). In that case,
-makeMonthlyStat respects the existing cluster.
-}
-\note{
-The \code{val} component of the returned object will always be the same structure
-as \code{x}, i.e. of dimensions {x, y, z, 12}.
+The stat function is calculated for all combinations of lon,
+lat, and Z (if present).
 }
 \examples{
 d <- cmip5data(1970:1975)   # sample data
 makeMonthlyStat(d)
 summary(makeMonthlyStat(d))
-\dontrun{
-library(doParallel)
-registerDoParallel()
-summary(makeMonthlyStat(d, verbose=TRUE, parallel=TRUE))
-}
 summary(makeMonthlyStat(d, FUN=sd))
 }
 \seealso{

@@ -14,6 +14,8 @@ library(testthat)
 context("saveNetCDF")
 
 test_that("saveNetCDF handles bad input", {
+    if(!require(ncdf4, quietly=T)) skip("ncdf4 not available")
+    
     d <- cmip5data(1)
     expect_error(saveNetCDF(1))                       # non-cmip5data x
     expect_error(saveNetCDF(d, file=1))               # non-character file
@@ -25,6 +27,8 @@ test_that("saveNetCDF handles bad input", {
 })
 
 test_that("saveNetCDF saves X-Y-T data correctly", {
+    if(!require(ncdf4, quietly=T)) skip("ncdf4 not available")
+    
     d <- cmip5data(1)
     dfile <- tempfile()
     if(file.exists(dfile)) expect_true(file.remove(dfile))
@@ -37,7 +41,7 @@ test_that("saveNetCDF saves X-Y-T data correctly", {
         
         expect_equal(length(nc$var), 1) # variable count should match
         expect_equal(length(nc$dim), 3) # dimension count should match
-        expect_equivalent(d$val, ncvar_get(nc, "var"))  # data should match
+        expect_equivalent(d$val$value, as.numeric(ncvar_get(nc, "var")))  # data should match
         expect_is(nc$dim$lon$units, "character")  # units should be written...
         expect_is(nc$dim$lat$units, "character")
         expect_null(nc$dim$Z$units)
@@ -48,6 +52,8 @@ test_that("saveNetCDF saves X-Y-T data correctly", {
 })
 
 test_that("saveNetCDF saves X-Y-Z-T data correctly", {
+    if(!require(ncdf4, quietly=T)) skip("ncdf4 not available")
+    
     d <- cmip5data(1, Z=T)
     dfile <- tempfile()
     if(file.exists(dfile)) expect_true(file.remove(dfile))
@@ -60,7 +66,7 @@ test_that("saveNetCDF saves X-Y-Z-T data correctly", {
 
         expect_equal(length(nc$var), 1) # variable count should match
         expect_equal(length(nc$dim), 4) # dimension count should match
-        expect_equivalent(d$val, ncvar_get(nc, "var"))  # data should match
+        expect_equivalent(d$val$value, as.numeric(ncvar_get(nc, "var")))  # data should match
         expect_is(nc$dim$lon$units, "character")  # units should be written...
         expect_is(nc$dim$lat$units, "character")
         expect_is(nc$dim$Z$units, "character")
@@ -71,6 +77,8 @@ test_that("saveNetCDF saves X-Y-Z-T data correctly", {
 })
 
 test_that("saveNetCDF saves X-Y (area) data correctly", {
+    if(!require(ncdf4, quietly=T)) skip("ncdf4 not available")
+    
     d <- cmip5data(0, time=F)  # area data
     dfile <- tempfile()
     if(file.exists(dfile)) expect_true(file.remove(dfile))
@@ -83,7 +91,7 @@ test_that("saveNetCDF saves X-Y (area) data correctly", {
         
         expect_equal(length(nc$var), 1) # variable count should match
         expect_equal(length(nc$dim), 2) # dimension count should match
-        expect_equivalent(d$val[,,1,1], ncvar_get(nc))  # data should match
+        expect_equivalent(d$val$value, as.numeric(ncvar_get(nc)))  # data should match
         expect_is(nc$dim$lon$units, "character")  # units should be written...
         expect_is(nc$dim$lat$units, "character")
         expect_null(nc$dim$depth$units)
@@ -94,6 +102,8 @@ test_that("saveNetCDF saves X-Y (area) data correctly", {
 })
 
 test_that("saveNetCDF saves t (time) data correctly", {
+    if(!require(ncdf4, quietly=T)) skip("ncdf4 not available")
+    
     d <- cmip5data(1:10, lonlat=F)  # time data
     dfile <- tempfile()
     if(file.exists(dfile)) expect_true(file.remove(dfile))
@@ -106,7 +116,7 @@ test_that("saveNetCDF saves t (time) data correctly", {
         
         expect_equal(length(nc$var), 1) # variable count should match
         expect_equal(length(nc$dim), 1) # dimension count should match
-        expect_equivalent(d$val, ncvar_get(nc))  # data should match
+        expect_equivalent(d$val$value, as.numeric(ncvar_get(nc)))  # data should match
         expect_null(nc$dim$lon)
         expect_null(nc$dim$lat)
         expect_null(nc$dim$Z)
@@ -116,4 +126,3 @@ test_that("saveNetCDF saves t (time) data correctly", {
         expect_is(nc$dim$time$calendar, "character")
     }
 })
-

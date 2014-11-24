@@ -3,7 +3,7 @@
 \alias{loadCMIP5}
 \title{Load CMIP5 data}
 \usage{
-loadCMIP5(variable, model, experiment, ensemble = NULL, domain = "[^_]+",
+loadCMIP5(variable, model, experiment, ensemble = "[^_]+", domain = "[^_]+",
   path = ".", recursive = TRUE, verbose = FALSE, force.ncdf = FALSE,
   FUN = mean, yearRange = NULL)
 }
@@ -31,7 +31,7 @@ loadCMIP5(variable, model, experiment, ensemble = NULL, domain = "[^_]+",
 \item{yearRange}{numeric of length 2. If supplied, load only these years of data}
 }
 \value{
-A \code{\link{cmip5data}} object
+A \code{\link{cmip5data}} object, or \code{NULL} if nothing loaded
 }
 \description{
 Loads CMIP5 data from disk. \code{loadCMIP5} will return a unique model ensemble,

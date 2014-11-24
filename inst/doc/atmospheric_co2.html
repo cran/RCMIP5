@@ -10,7 +10,7 @@
 
 <meta name="author" content="Ben Bond-Lamberty and Corinne Hartin" />
 
-<meta name="date" content="2014-10-14" />
+<meta name="date" content="2014-11-24" />
 
 <title>Atmospheric CO2</title>
 
@@ -28,7 +28,7 @@
 <div id="header">
 <h1 class="title">Atmospheric CO2</h1>
 <h4 class="author"><em>Ben Bond-Lamberty and Corinne Hartin</em></h4>
-<h4 class="date"><em>2014-10-14</em></h4>
+<h4 class="date"><em>2014-11-24</em></h4>
 </div>
 
 
@@ -88,9 +88,9 @@ Spatial dimensions: lon [128] lat [64] Z [22]
 Time dimension: mon [60] days since 1850-1-1 
 Size: 82.5 MB
 Provenance has 6 entries</code></pre>
-<p>Here we see the name of the variable, model, experiment, the fact that this came from two ensembles, the data range and spatial dimensions, time dimensions and frequency (‘mon’ - monthly), size in memory, and a note about the provenance (see below). Everything looks good. Assuming the <code>ggplot2</code> package is installed, we might want to make a quick plot of the data to check:</p>
-<pre><code>&gt; worldPlot(co2, time=1:12)  # first 12 months, i.e. all of 2006</code></pre>
-<p>The resulting plot isn’t very interesting, as CO2 is a well-mixed gas, but would be useful if we were working with a spatially variable output.</p>
+<p>Here we see the name of the variable, model, experiment, the fact that this came from two ensembles, the data range and spatial dimensions, time dimensions and frequency (‘mon’ - monthly), size in memory, and a note about the provenance (see below). Everything looks good. <del>Assuming the <code>ggplot2</code> package is installed, we might want to make a quick plot of the data to check:</del></p>
+<pre><code>&gt; # worldPlot(co2, time=1:12)  # first 12 months, i.e. all of 2006</code></pre>
+<p><del>The resulting plot isn’t very interesting, as CO2 is a well-mixed gas, but would be useful if we were working with a spatially variable output.</del> [worldPlot has been removed from <code>RCMIP5</code> for now.]</p>
 </div>
 <div id="compute-global-means" class="section level2">
 <h2>Compute global means</h2>
@@ -105,7 +105,7 @@ No grid areas supplied; using calculated values
 Calculating grid cell areas...
 Running in serial
 Took 0.03 s</code></pre>
-<p>The second step, <code>makeAnnualStat</code>, was relatively slow (and can be <em>very</em> slow for large datasets).<a href="#fn3" class="footnoteRef" id="fnref3"><sup>3</sup></a> Also note that because we didn’t supply any grid cell area data to <code>makeAnnualStat</code>, it computed its own. Now we look at the resulting data:</p>
+<p>Note that because we didn’t supply any grid cell area data to <code>makeAnnualStat</code>, it computed its own. Now we look at the resulting data:</p>
 <pre><code>&gt; summary(co2summary)
 CMIP5 data (annual summary of 12 months) (filtered) 
 Variable: weighted.mean of co2 (1e-6) from model CanESM2
@@ -146,7 +146,7 @@ Provenance has 10 entries</code></pre>
 </div>
 <div id="next-steps-and-final-notes" class="section level2">
 <h2>Next steps and final notes</h2>
-<p>As noted above, we can simply use <code>as.data.frame</code> to convert our <code>cmip5data</code> object to a standard data frame. We could also <code>saveNetCDF(co2summary)</code> to save it as a netcdf file, for example to send to a colleague; the provenance is saved as netcdf global attributes, and optionally as an accompanying text file.</p>
+<p>As noted above, we can simply use <code>as.data.frame</code> to convert our <code>cmip5data</code> object to a standard data frame. We could also <code>saveNetCDF(co2summary)</code> to save it as a Network Common Data Format (NetCDF) file, for example to send to a colleague; the provenance is saved as netcdf global attributes, and optionally as an accompanying text file.</p>
 <p>Given the above example, it’s straightforward to process a whole collection of CMIP5 data-for example, all the co2 data across experiments and models. For example:</p>
 <pre><code>for(mo in co2filechk$model) {
     for(ex in co2filechk$experiment) {
@@ -169,7 +169,6 @@ Provenance has 10 entries</code></pre>
 <ol>
 <li id="fn1"><p>Unless it’s an ‘fx’ (fixed) domain file, with no time dimension.<a href="#fnref1">↩</a></p></li>
 <li id="fn2"><p>Again, this depends on what you’ve downloaded from the ESGF! Naively running the commands in this vignette, without the appropriate CMIP5 data, will produce nothing but errors.<a href="#fnref2">↩</a></p></li>
-<li id="fn3"><p>All the <code>make...Stat</code> functions have a optional <code>parallel</code> parameter that will use the <code>foreach</code> package and any available parallelized backend.<a href="#fnref3">↩</a></p></li>
 </ol>
 </div>
 

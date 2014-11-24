@@ -37,13 +37,13 @@ A cmip5data object, which is a list with the following fields:
  \item{experiment}{String containing the experiment name of this dataset}
  \item{ensembles}{Array of strings containg the ensemble(s) included in this dataset}
  \item{domain}{String containing the domain name of this dataset}
- \item{val}{Multidimensional array [x, y, z, t] holding the data}
+ \item{val}{Data frame holding data, with fields lon, lat, Z, time}
  \item{valUnit}{String containing the value units}
  \item{lon}{Numeric vector containing longitude values; may be \code{NULL}}
  \item{lat}{Numeric vector containing latitude values; may be \code{NULL}}
  \item{Z}{Numeric vector Z values; may be \code{NULL}}
  \item{time}{Numeric vector containing time values; may be \code{NULL}}
- \item{dimNames}{Array of strings containing the original (netcdf) dimension names}
+ \item{dimNames}{Array of strings containing the original (NetCDF) dimension names}
  \item{calendarStr}{String defining the calendar type; may be \code{NULL}}
  \item{debug}{List with additional data (subject to change)}
  \item{provenance}{Data frame with the object's provenance. See \code{\link{addProvenance}}}

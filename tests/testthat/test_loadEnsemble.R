@@ -29,47 +29,48 @@ test_that("loadEnsemble handles bad input", {
     expect_error(loadEnsemble("","","","",recursive=1))             # non-logical recursive
 })
 
-test_that("loadEnsemble handles no files found", {            # no netcdf files found
+test_that("loadEnsemble handles no files found", {            # no NetCDF files found
     w <- getOption('warn')
     options(warn=-1)
-    expect_warning(loadEnsemble("","","","","", path=normalizePath("testdata_none/")))
-    expect_is(loadEnsemble("","","","","", path=normalizePath("testdata_none/")), "NULL")
+    expect_warning(loadEnsemble("","","","","", path=("testdata_none")))
+    expect_is(loadEnsemble("","","","","", path=("testdata_none")), "NULL")
     options(warn=w)
 })
 
 test_that("loadEnsemble loads monthly data", {
+    
     skip_on_cran()
     
-    path <- "../../sampledata/monthly/"
+    path <- "../../sampledata/monthly"
     if(!file.exists(path)) skip("Path doesn't exist")
     
-    d <- loadEnsemble('nbp','HadGEM2-ES', 'rcp85', 'r3i1p1', '[^_]+', path=path, verbose=F)     # test data set
-    expect_is(d, "cmip5data")
     d <- loadEnsemble('prc','GFDL-CM3', 'rcp85', 'r1i1p1', '[^_]+', path=path, verbose=F)
     expect_is(d, "cmip5data")
     d <- loadEnsemble('prc','GFDL-CM3','rcp85','r1i1p1','[^_]+', path=path, verbose=F)     
-    expect_is(d,"cmip5data")
-    expect_equal(length(d$files),1)                                 # should be one file
+    expect_is(d, "cmip5data")
+    expect_equal(length(d$files), 1)                                 # should be one file
 })
 
 test_that("loadEnsemble loads annual data", {
+    
     skip_on_cran()
     
-    path <- "../../sampledata/annual/"
+    path <- "../../sampledata/annual"
     if(!file.exists(path)) skip("Path doesn't exist")
     
     d <- loadEnsemble('co3', 'HadGEM2-ES', 'rcp85', 'r1i1p1', '[^_]+', path=path, verbose=F)
-    expect_is(d,"cmip5data")
+    expect_is(d, "cmip5data")
 })
 
 test_that("loadEnsemble loads 4D data", {
+    
     skip_on_cran()
     
-    path <- "../../sampledata/annual/"
+    path <- "../../sampledata/annual"
     if(!file.exists(path)) skip("Path doesn't exist")
     
     d <- loadEnsemble('ph','MPI-ESM-LR','historical','r1i1p1', '[^_]+', path=path, verbose=F)     # test data set
-    expect_is(d,"cmip5data")
+    expect_is(d, "cmip5data")
     expect_is(d$Z, "array")
     expect_is(d$val, "array")
     
@@ -78,7 +79,7 @@ test_that("loadEnsemble loads 4D data", {
     expect_is(d,"cmip5data")
     expect_is(d$Z, "array")
     
-    path <- "../../sampledata/monthly/"
+    path <- "../../sampledata/monthly"
     d <- loadEnsemble('tsl','GFDL-CM3','historicalGHG','r1i1p1', '[^_]+', 
                       path=path, verbose=F)     # test data set
     expect_is(d,"cmip5data")
@@ -91,32 +92,37 @@ test_that("loadEnsemble checks unique domain", {
 })
 
 test_that("loadEnsemble assigns ancillary data", {
+    
     skip_on_cran()
     
-    path <- "../../sampledata/annual/"
+    path <- "../../sampledata/annual"
     if(!file.exists(path)) skip("Path doesn't exist")
     
     d <- loadEnsemble('co3','HadGEM2-ES','rcp85','r1i1p1', '[^_]+', path=path,verbose=F)
-    expect_is(d,"cmip5data")
+    expect_is(d, "cmip5data")
     expect_true(!is.null(d$provenance))
 })
 
 test_that("loadEnsemble handles 2D lon and lat", {
+    
     skip_on_cran()
     
-    path <- "../../sampledata/"
+    path <- "../../sampledata"
     if(!file.exists(path)) skip("Path doesn't exist")
     
     d <- loadEnsemble('tos','GFDL-ESM2G', 'historical', 'r1i1p1', '[^_]+', path=path, verbose=F)
     expect_is(d, "cmip5data")
-    expect_equal(length(dim(d$lon)), 1)
-    expect_equal(length(dim(d$lat)), 1)
+    expect_is(d$lon, "numeric")
+    expect_is(d$lat, "numeric")
+    expect_null(dim(d$lon))
+    expect_null(dim(d$lat))    
 })
 
 test_that("loadEnsemble handles data with time length=1", {
+
     skip_on_cran()
     
-    path <- "../../sampledata/"
+    path <- "../../sampledata"
     if(!file.exists(path)) skip("Path doesn't exist")
     
     # This is a real CMIP5 file with one single month
@@ -124,15 +130,15 @@ test_that("loadEnsemble handles data with time length=1", {
     d <- loadEnsemble("spco2", "HadGEM2-ES", "rcp85", domain="Omon",
                       ensemble="r1i1p1", path=path, verbose=F)    
     expect_is(d, "cmip5data")
-    expect_equal(length(dim(d$val)), 4)
-    expect_equal(dim(d$val)[3], 1)
+    # TODO: check dimensions
 })
 
 
 test_that("loadEnsemble handles time-only data", {
+    
     skip_on_cran()
     
-    path <- "../../sampledata/"
+    path <- "../../sampledata"
     if(!file.exists(path)) skip("Path doesn't exist")
         
     # This is a real CMIP5 file with no lon or lat, just time
@@ -141,7 +147,5 @@ test_that("loadEnsemble handles time-only data", {
                       path=path, verbose=F)
     
     expect_is(d, "cmip5data")
-    expect_equal(length(dim(d$val)), 4)
-    expect_equal(dim(d$val)[1], 1)
-    expect_equal(dim(d$val)[2], 1)
+    # TODO: check dimensions
 })

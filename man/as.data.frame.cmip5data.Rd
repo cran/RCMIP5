@@ -3,20 +3,17 @@
 \alias{as.data.frame.cmip5data}
 \title{Convert a cmip5data object to a data frame}
 \usage{
-\method{as.data.frame}{cmip5data}(x, ..., verbose = FALSE,
-  originalNames = FALSE)
+\method{as.data.frame}{cmip5data}(x, ..., originalNames = FALSE)
 }
 \arguments{
 \item{x}{A \code{\link{cmip5data}} object}
 
 \item{...}{Other parameters}
 
-\item{verbose}{logical. Print info as we go?}
-
 \item{originalNames}{logical. Use original dimension names from file?}
 }
 \value{
-The object converted, as well as possible, to a data frame
+The object converted to a data frame
 }
 \description{
 Convert a cmip5data object to a data frame

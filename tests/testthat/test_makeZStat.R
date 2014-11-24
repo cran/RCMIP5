@@ -3,8 +3,6 @@
 # Uses the testthat package
 # See http://journal.r-project.org/archive/2011-1/RJournal_2011-1_Wickham.pdf
 library(testthat)
-library(plyr)
-library(abind)
 
 # To run this code:
 #   source("makeZStat.R")
@@ -19,8 +17,6 @@ test_that("makeZStat handles bad input", {
     expect_error(makeZStat(cmpi5data()))               # wrong size list d
     expect_error(makeZStat(d,verbose=1))               # non-logical verbose
     expect_error(makeZStat(d,verbose=c(T, T)))          # multiple verbose values
-    expect_error(makeZStat(d,parallel=1))              # non-logical parallel
-    expect_error(makeZStat(d,parallel=c(T, T)))         # multiple parallel values
     expect_error(makeZStat(d,FUN=1))                   # non-function FUN
     expect_error(makeZStat(d,FUN=c(mean, mean)))        # multiple FUN values
 })
@@ -43,37 +39,33 @@ test_that("makeZStat computes Z means", {
     expect_more_than(nrow(res$provenance), nrow(d$provenance))
 
     # Is the answer value array correctly sized?
-    ndims <- length(dim(res$val))
-    expect_equal(ndims, length(dim(d$val)))  # same number of dimensions
-    expect_equal(dim(res$val)[3], 1) #  all spatial dimensions should be 1
-    expect_equal(dim(res$val)[c(1,2,4)], dim(d$val)[c(1,2,4)]) # time should match
-
+    expect_equal(nrow(res$val), nrow(d$val)/length(d$Z))
+    
     # Are the answer values numerically correct?
-    expect_equal(mean(res$val), mean(d$val))  # no weighting
+    expect_equal(mean(res$val$value), mean(d$val$value))
 })
 
-test_that("does makeZStat correctly report multi-line functions",{
+test_that("makeZStat handles custom function and dots", {
     years <- 1850:1851
-    d <- cmip5data(years, Z=T)
-    res <- makeZStat(d, FUN=function(x){
-        mean(x)
-        }, verbose=F)
-
-})
-
-test_that("makeZStat parallel results == serial result", {
-    library(doParallel)
-    registerDoParallel(cores=2)  # CRAN policy is 2 cores max
-    years <- 1850:1851
-    d <- cmip5data(years, Z=T, randomize=T)
-    res_s <- makeZStat(d, verbose=F, parallel=F)
-    res_p <- makeZStat(d, verbose=F, parallel=T)
-    expect_equal(res_s$val, res_p$val)
-    expect_equal(res_s$numZs, res_p$numZs)
-})
-
-test_that("makeZStat handles 3-dimensional data", {
-    years <- 1850:1851
-    d <- cmip5data(years, Z=F)
-    expect_warning(makeZStat(d))
+    llsize <- 2
+    d <- cmip5data(years, lonsize=llsize, latsize=llsize, Z=T)
+    
+    # All data 1, except max Z is 2
+    d$val$value <- 1
+    d$val$value[d$val$Z ==max(d$Z)] <- 2    
+    w <- c(rep(1, length(d$Z)-1), length(d$Z)-1)
+    
+    # Compute correct answer
+    ans <- aggregate(value~lon+lat+time, data=d$val, FUN=weighted.mean, w=w)
+    
+    res1 <- makeZStat(d, verbose=F, FUN=weighted.mean, w)
+    expect_is(res1, "cmip5data")
+    
+    myfunc <- function(x, w, ...) weighted.mean(x, w, ...)
+    res2 <- makeZStat(d, verbose=F, FUN=myfunc, w)
+    expect_is(res1, "cmip5data")
+    
+    # Are the result values correct?    
+    expect_equal(res1$val$value, ans$value)
+    expect_equal(res2$val$value, ans$value)
 })

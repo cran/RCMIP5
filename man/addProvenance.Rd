@@ -10,7 +10,7 @@ addProvenance(x, msg, verbose = FALSE)
 
 \item{msg}{Either a string (message to be added to the provenance) or
 a cmip5data object, in which case the provenance of this latter object is appended
-to that of 'x' (i.e., their histories are merged)}
+to that of \code{x} (i.e., their histories are merged)}
 
 \item{verbose}{logical. Print info as we go?}
 }

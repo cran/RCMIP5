@@ -6,7 +6,7 @@
 #' @param x A \code{\link{cmip5data}} object
 #' @param msg Either a string (message to be added to the provenance) or
 #' a cmip5data object, in which case the provenance of this latter object is appended
-#' to that of 'x' (i.e., their histories are merged)
+#' to that of \code{x} (i.e., their histories are merged)
 #' @param verbose logical. Print info as we go?
 #' @return The original object, with an updated provenance containing:
 #'  \item{timestamp}{Date and time entry was added}
@@ -58,6 +58,13 @@ addProvenance <- function(x, msg, verbose=FALSE) {
     nr <- nrow(x$provenance) + 1
     x$provenance[nr, "timestamp"] <- Sys.time()
     if(class(msg) == "character") {
+        # Trim multiple spaces (happens with custom FUNs in makeStat functions)
+        # from http://stackoverflow.com/questions/14737266/removing-multiple-spaces-and-trailing-spaces-using-gsub
+        msg <- gsub("^ *|(?<= ) | *$", "", msg, perl=T)
+        # Remove artifacts for prettier code in message
+        msg <- gsub("{;", "{", msg, fixed=T)
+        msg <- gsub("; }", " }", msg, fixed=T)
+        
         if(verbose) cat("Adding message to provenance")
         x$provenance[nr, "caller"] <- parentcall
         x$provenance[nr, "message"] <- msg

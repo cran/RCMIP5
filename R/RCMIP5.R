@@ -17,7 +17,7 @@
 #'   An overview of CMIP5 and the experiment design, Bulletin of the American
 #'   Meteorological Society, 93, 485-498.
 #'   \url{http://dx.doi.org/10.1175/BAMS-D-11-00094.1}
-#' @import plyr abind reshape2 digest foreach
+#' @import dplyr reshape2 digest abind
 #' @docType package
 #' @name RCMIP5
 NULL
@@ -47,13 +47,13 @@ NULL
 #'  \item{experiment}{String containing the experiment name of this dataset}
 #'  \item{ensembles}{Array of strings containg the ensemble(s) included in this dataset}
 #'  \item{domain}{String containing the domain name of this dataset}
-#'  \item{val}{Multidimensional array [x, y, z, t] holding the data}
+#'  \item{val}{Data frame holding data, with fields lon, lat, Z, time}
 #'  \item{valUnit}{String containing the value units}
 #'  \item{lon}{Numeric vector containing longitude values; may be \code{NULL}}
 #'  \item{lat}{Numeric vector containing latitude values; may be \code{NULL}}
 #'  \item{Z}{Numeric vector Z values; may be \code{NULL}}
 #'  \item{time}{Numeric vector containing time values; may be \code{NULL}}
-#'  \item{dimNames}{Array of strings containing the original (netcdf) dimension names}
+#'  \item{dimNames}{Array of strings containing the original (NetCDF) dimension names}
 #'  \item{calendarStr}{String defining the calendar type; may be \code{NULL}}
 #'  \item{debug}{List with additional data (subject to change)}
 #'  \item{provenance}{Data frame with the object's provenance. See \code{\link{addProvenance}}}
@@ -103,14 +103,13 @@ cmip5data <- function(x=list(),
             domain="domain",
             val=NULL,
             valUnit=NULL,
-            lon=NULL,
-            lat=NULL,
-            Z=NULL,
-            time=NULL,
+            lon=NA,
+            lat=NA,
+            Z=NA,
+            time=NA,
             dimNames=NULL
         )
         
-        valdims <- c(1, 1, 1, 1)
         debug <- list()
         
         # If this data will have spatial dimensions, construct
@@ -121,7 +120,6 @@ cmip5data <- function(x=list(),
             result$lon <- 360/lonsize * c(0:(lonsize-1))  + 360/lonsize/2
             result$lat <- 180/latsize * c(0:(latsize-1)) - 90 + 180/latsize/2
             result$dimNames=c("lon", "lat")
-            valdims[1:2]=c(lonsize, latsize)
             debug$lonUnit <- "degrees_east"
             debug$latUnit <- "degrees_north"
         } else {
@@ -134,7 +132,6 @@ cmip5data <- function(x=list(),
             
             result$Z <- c(0:(Zsize-1))
             result$dimNames <- c(result$dimNames, "Z")
-            valdims[3] <- Zsize
             debug$ZUnit <- "m"
         } else {
             result$dimNames <- c(result$dimNames, NA)
@@ -151,26 +148,40 @@ cmip5data <- function(x=list(),
             debug$startYr <- years[1]
             debug$calendarStr <- "360_day"
             debug$timeUnit <- paste0("days since ",years[1],"-01-01")
-            # '+15' initalizes all time stamps to be middle of the month
-            debug$timeRaw <- (360/ppy*c(0:(length(years)*ppy-1) )+15)
+            
+            if(monthly) {
+                # '+15' initalizes all time stamps to be middle of the month
+                debug$timeRaw <- (360/ppy*c(0:(length(years)*ppy-1) )+15)    
+                result$time <- debug$timeRaw/360+min(years)    
+            } else {
+                debug$timeRaw <- result$time <- years
+            }
+            
             # convert day based calandar to year based
-            result$time <- debug$timeRaw/360+min(years)
             result$dimNames <- c(result$dimNames, "time")
-            valdims[4] <- ppy*length(years)
-        } else {
+        } else { # no time
             result$dimNames <- c(result$dimNames, NA)
             result$domain <- "fx"
         }
         
-        # Generate fake data
+        # Make data frame, fill it with fake data, wrap as tbl_df
+        result$val <- expand.grid(lon=result$lon, lat=result$lat,
+                                  Z=result$Z, time=result$time)
         if(randomize) {
-            valData <- runif(n=prod(valdims))
+            result$val$value <- runif(n=nrow(result$val))
         } else {
-            valData <- 1
-        }
-        result$val <- array(valData, dim=valdims)
+            result$val$value <- 1
+        }      
+        result$val <- tbl_df(result$val)
+        
         result$valUnit <- "unit"
         result$debug <- debug
+        
+        # Change any NA dimension (was needed for expand.grid above) to NULL
+        if(all(is.na(result$lon))) result$lon <- NULL
+        if(all(is.na(result$lat))) result$lat <- NULL
+        if(all(is.na(result$Z))) result$Z <- NULL
+        if(all(is.na(result$time))) result$time <- NULL
         
         # Add debug info and set class
         result <- structure(result, class="cmip5data")
@@ -199,10 +210,15 @@ print.cmip5data <- function(x, ...) {
     
     ansStr <- paste0('CMIP5: ', x$variable, ", ", x$model, " ", x$experiment)
     
-    if(!is.null(x$time)) {
-        ansStr <- paste0(ansStr, ", ", floor(min(x$time, na.rm=TRUE)),
-                         " to ", floor(max(x$time, na.rm=TRUE)))
+    spaceStr <- paste(length(x$lon), "x", length(x$lat), "x", length(x$Z))
+    ansStr <- paste0(ansStr, ", ", spaceStr)
+    
+    timeStr <- "no time"
+    if(!is.null(x$time) & length(x$time) > 0) {
+        timeStr <- paste(floor(min(x$time, na.rm=TRUE)), "to",
+                         floor(max(x$time, na.rm=TRUE)))
     }
+    ansStr <- paste0(ansStr, ", ", timeStr)
     
     if(!is.null(x$ensembles)) {
         ansStr <- paste0(ansStr, ", from ", length(x$ensembles), " ",
@@ -252,6 +268,10 @@ summary.cmip5data <- function(object, ...) {
     if(!is.null(object$numCells)) {
         ans$type <- paste0(ans$type, " (spatial summary of ", object$numCells, " cells)")
     } 
+    if(!is.null(object$numZs)) {
+        ans$type <- paste0(ans$type, " (Z summary of ", object$numZs, " levels)")
+    } 
+    
     if(!is.null(object$filtered)) {
         ans$type <- paste(ans$type, "(filtered)")
     }
@@ -266,9 +286,9 @@ summary.cmip5data <- function(object, ...) {
     
     ans$time <- paste0(object$debug$timeFreqStr, " [", length(object$time), "] ", object$debug$timeUnit)
     ans$size <- as.numeric(object.size(object))
-    ans$valsummary <- c(min(as.vector(object$val), na.rm=TRUE),
-                        mean(as.vector(object$val), na.rm=TRUE),
-                        max(as.vector(object$val), na.rm=TRUE))
+    ans$valsummary <- c(min(object$val$value, na.rm=TRUE),
+                        mean(object$val$value, na.rm=TRUE),
+                        max(object$val$value, na.rm=TRUE))
     ans$provenance <- object$provenance
     
     return(ans)
@@ -298,30 +318,42 @@ print.summary.cmip5data <- function(x, ...) {
 #'
 #' @param x A \code{\link{cmip5data}} object
 #' @param ... Other parameters
-#' @param verbose logical. Print info as we go?
 #' @param originalNames logical. Use original dimension names from file?
-#' @return The object converted, as well as possible, to a data frame
+#' @return The object converted to a data frame
 #' @export
 #' @keywords internal
-as.data.frame.cmip5data <- function(x, ..., verbose=FALSE, originalNames=FALSE) {
-    if(verbose) cat("Melting...\n")
-    if(originalNames)
-        dimNames <- x$dimNames
-    else
-        dimNames <- c("lon", "lat", "Z", "time")
-    df <- reshape2::melt(x$val, varnames=dimNames)
-    
-    # Fill in dimensional data. Note that if one of these vectors (x$lon, x$lat,
-    # x$Z, x$time) doesn't exist, it will be removed from the data frame.
-    # Note the order here (column 4...1) matters, because we're potentially
-    # removing columns as we go!
-    df[4] <- x$time[df[,4]]
-    df[3] <- x$Z[df[,3]]
-    df[2] <- x$lat[df[,2]]
-    df[1] <- x$lon[df[,1]]
-    
-    df
+as.data.frame.cmip5data <- function(x, ..., originalNames=FALSE) {
+    # Suppress stupid NOTEs from R CMD CHECK
+    lon <- lat <- Z <- time <- NULL
+    dplyr::arrange(x$val, lon, lat, Z, time)
 } # as.data.frame.cmip5data
+
+#' Convert a cmip5data object to an array
+#'
+#' @param x A \code{\link{cmip5data}} object
+#' @param ... Other parameters
+#' @param drop logical. Drop degenerate dimensions?
+#' @return The object converted to an array
+#' @export
+#' @keywords internal
+as.array.cmip5data <- function(x, ..., drop=TRUE) {
+    
+    dimList <- c(length(unique(x$val$lon)),
+                 length(unique(x$val$lat)),
+                 length(unique(x$val$Z)),
+                 length(unique(x$val$time)))
+    
+    # Remove degenerate dimensions
+    if(drop) {
+        dimList <- dimList[!dimList %in% 1]        
+    }
+    
+    # Suppress stupid NOTEs from R CMD CHECK
+    lon <- lat <- Z <- time <- NULL
+    
+    # Note we sort data frame before converting to array!
+    array(dplyr::arrange(x$val, lon, lat, Z, time)$value, dim=dimList)
+} # as.array.cmip5data
 
 #' Make package datasets and write them to disk.
 #'

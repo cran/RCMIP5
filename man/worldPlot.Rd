@@ -3,13 +3,13 @@
 \alias{worldPlot}
 \title{Plot global data}
 \usage{
-worldPlot(x, time = 1, splitPacific = TRUE, capMinMax = TRUE,
-  verbose = FALSE)
+worldPlot(x, dates = unique(x$val$time), splitPacific = TRUE,
+  capMinMax = TRUE, verbose = FALSE)
 }
 \arguments{
 \item{x}{A \code{\link{cmip5data}} object}
 
-\item{time}{numeric. Which time slice(s) should we plot?}
+\item{dates}{numeric. Which date value(s) should we plot?}
 
 \item{splitPacific}{logical. Try to split image in the Pacific?}
 
@@ -28,6 +28,6 @@ Uses \code{ggplot2::geom_raster}.
 }
 \examples{
 d <- cmip5data(1970:1975)   # sample data
-worldPlot(d, time=1:12)
+worldPlot(d)
 }
 

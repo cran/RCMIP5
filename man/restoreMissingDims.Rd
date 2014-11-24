@@ -6,7 +6,7 @@
 restoreMissingDims(dims, dimNames, lonArr, latArr, ZArr, thisTimeRaw, verbose)
 }
 \arguments{
-\item{dims}{the data array just loaded from the netcdf}
+\item{dims}{the data array just loaded from the NetCDF}
 
 \item{dimNames}{vector of dimensions names present in file}
 

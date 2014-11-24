@@ -28,11 +28,6 @@ getFileInfo <- function(path='.', recursive=TRUE) {
     stopifnot(length(recursive)==1 & is.logical(recursive))
     stopifnot(file.exists(path))
 
-    # Match the path conventions to the operating system
-    w <- getOption('warn')
-    options(warn=-1)
-    path <- normalizePath(path)
-    options(warn=w)
 
     # Pull all nc files from the directory
     fullFile <- list.files(path=path, pattern='nc$',
@@ -40,7 +35,7 @@ getFileInfo <- function(path='.', recursive=TRUE) {
 
     # Check that there are nc files to process
     if(!length(fullFile)) {
-        warning('No netcdf files found')
+        warning('No NetCDF files found')
         return(NULL)
     }
 
@@ -72,7 +67,7 @@ getFileInfo <- function(path='.', recursive=TRUE) {
     }
 
     # Pull the file size
-    sizeInfo <- unlist(lapply(fullFile, function(x){paste0(round(file.info(x)$size/1024),"K")}))
+    sizeInfo <- unlist(lapply(fullFile, function(x) { paste0(round(file.info(x)$size/1024), "K") }))
 
     # Since some of the files only have 5 pieces of information and other's have
     # ...6 we need to deal with them seperately and then merge the data frames.
