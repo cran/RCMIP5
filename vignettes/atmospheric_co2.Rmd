@@ -13,7 +13,7 @@ One common use for CMIP5 data, and the `RCMIP5` package, is to extract the globa
 
 ## Make sure the required data are present
 
-As the package documentation notes (see e.g. http://gitcom.com/JGCRI/RCMIP) you first have to download the necessary data from an Earth System Grid Federation node; RCMIP5 won't do this for you. Assuming this step is complete, then, we check to make sure all the data we'll need are present. First load information about all the CMIP5 files available:
+As the package documentation notes (see e.g. https://github.com/JGCRI/RCMIP5) you first have to download the necessary data from an Earth System Grid Federation node; RCMIP5 won't do this for you. Assuming this step is complete, then, we check to make sure all the data we'll need are present. First load information about all the CMIP5 files available:
 ```
 > library(RCMIP5)
 > mypath <- "~/my/cmip5/files/"
@@ -69,11 +69,13 @@ Loading ~/my/cmip5/files/co2_Amon_CanESM2_rcp85_r2i1p1_200601-210012.nc
 - co2 dimension names: lon lat plev time 
 - loading only timeslices 1 - 60 
 - data 128 64 22 60 
+Melting to data frame
 ```
 
 `loadCMIP5` reports that there are two ensembles to average (r1i1p1 and r2i1p1), the name of each file it loads, the 
-dimension names, the fact that it's only reading the first five years, and the resulting data array size: 128 (lon) x 64 (lat) 
-x 22 (plev, which will be renamed 'Z' when read in) x 60 (time).
+dimension names, the fact that it's only reading the first five years, and the overall data array size: 128 (lon) x 64 (lat) 
+x 22 (plev, which will be renamed 'Z' when read in) x 60 (time). These data are converted to a data frame for fast 
+processing in later steps.
 
 ## Examining the data
 
@@ -93,14 +95,15 @@ Provenance has 6 entries
 
 Here we see the name of the variable, model, experiment, the fact that this came from two ensembles, the data range
 and spatial dimensions, time dimensions and frequency ('mon' - monthly), size in memory, and a note about the 
-provenance (see below). Everything looks good. ~~Assuming the `ggplot2` package is installed, we might want to make a quick plot of the data to check:~~
+provenance (see below). Everything looks good. Assuming the `ggplot2` package is installed, we might want to make 
+a quick plot of the data to check:
 
 ```
-> # worldPlot(co2, time=1:12)  # first 12 months, i.e. all of 2006
+> worldPlot(co2, time=1:12)  # first 12 months, i.e. all of 2006
 ```
 
-~~The resulting plot isn't very interesting, as CO2 is a well-mixed gas, but would be useful if we were working with
-a spatially variable output.~~ [worldPlot has been removed from `RCMIP5` for now.]
+The resulting plot isn't very interesting, as CO2 is a well-mixed gas, but would be useful if we were working with
+a spatially variable output.
 
 ## Compute global means
 
@@ -112,16 +115,14 @@ data to a global mean value. This can be done as follows:
 > co2surf <- filterDimensions(co2, Zs=co2$Z[1], verbose=T)
 Filtered by Z, dim = 128 64 1 60 
 > co2annual <- makeAnnualStat(co2surf, verbose=T)
-Running in serial
-Took 6.41 s
+Took 1.41 s
 > co2summary <- makeGlobalStat(co2annual, verbose=T)
 No grid areas supplied; using calculated values
 Calculating grid cell areas...
-Running in serial
 Took 0.03 s
 ```
 
-Note that because we didn't supply any grid cell area data to `makeAnnualStat`, it computed its own. Now we look at the resulting data:
+Note that because we didn't supply any grid cell area data to `makeGlobalStat`, it computed its own. Now we look at the resulting data:
 
 ```
 > summary(co2summary)
@@ -146,14 +147,14 @@ The summary reports that `co2annual` is an annual summary of filtered data, and 
 3 1e+05 2008 384.7202
 4 1e+05 2009 386.9201
 5 1e+05 2010 389.2190
-> plot(df$time, df$value, type='b')
+> plot(co2_df$time, co2_df$value, type='b')
 ```
 ```{r, echo=FALSE}
-df <- structure(list(Z = c(1e+05, 1e+05, 1e+05, 1e+05, 1e+05), time = c(2006, 
+co2_df <- structure(list(Z = c(1e+05, 1e+05, 1e+05, 1e+05, 1e+05), time = c(2006, 
 2007, 2008, 2009, 2010), value = c(380.717267354329, 382.683990478516, 
 384.720212300618, 386.920120239258, 389.219032287598)), .Names = c("Z", 
 "time", "value"), row.names = c(NA, -5L), class = "data.frame")
-plot(df$time, df$value, type='b')
+plot(co2_df$time, co2_df$value, type='b')
 ```
 
 ## Provenance
@@ -180,9 +181,17 @@ the provenance of the `co2summary` object, we see a record of the steps performe
 The provenance also records what function (with parameter values) wrote each message, the data dimensions
 at each step, and a checksum (MD5 hash) of the data. The provenance can be exported, saved alongside the data, etc.
 
+## Speed considerations
+
+The CMIP5 data files can be *very* large, such that loading (not to mention processing) them is slow or impossible even on computers with plenty of memory. Some tips on dealing with this:
+
+* Use the `yearRange` parameter of `loadCMIP5()` to process smaller chunks of the data, re-combining only at the end. For the largest CMIP5 data sets, we've found it sometimes necessary to process 1-5 years at a time, even on a powerful machine.
+* If combining results as you go, don't repeatedly `rbind()` data frames together. Either write data out to a tempfile, or pre-allocate one results array beforehand. 
+* Order of operations matters! Process the most expensive (largest) dimensions first; for example, `makeGlobalStat()` should usually come before `makeAnnualStat()`.
+
 ## Next steps and final notes
 
-As noted above, we can simply use `as.data.frame` to convert our `cmip5data` object to a standard data frame. We could also `saveNetCDF(co2summary)` to save it as a Network Common Data Format (NetCDF) file, for example to send to a colleague; the provenance is saved as netcdf global attributes, and optionally as an accompanying text file.
+As noted above, we can simply use `as.data.frame` to convert our `cmip5data` object to a standard data frame. We could also `saveNetCDF(co2summary)` to save it as a Network Common Data Format (NetCDF) file, for example to send to a colleague; the provenance is saved as NetCDF global attributes, and optionally as an accompanying text file.
 
 Given the above example, it's straightforward to process a whole collection of CMIP5 data-for example, all the co2 data across experiments and models. For example:
 

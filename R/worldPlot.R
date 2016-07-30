@@ -7,26 +7,26 @@
 #' @param splitPacific logical. Try to split image in the Pacific?
 #' @param capMinMax logical. Cap data min and max by quantile? This may produce better coloring.
 #' @param verbose logical. Print info as we go?
-#' @return A ggplot object.
+#' @return A \code{ggplot} object.
 #' @details Uses \code{ggplot2::geom_raster}.
 #' @examples
 #' d <- cmip5data(1970:1975)   # sample data
 #' worldPlot(d)
 #' @export
-worldPlot <- function(x, dates=unique(x$val$time), splitPacific=TRUE, capMinMax=TRUE, verbose=FALSE) {
+worldPlot <- function(x, dates=unique(x$time), splitPacific=TRUE, capMinMax=TRUE, verbose=FALSE) {
  
     # Sanity checks
-    stopifnot(class(x)=="cmip5data")
-    stopifnot(is.numeric(dates)) 
-    stopifnot(is.logical(capMinMax) & length(capMinMax)==1)
-    stopifnot(is.logical(verbose) & length(verbose)==1)
+    assert_that(class(x)=="cmip5data")
+    assert_that(is.numeric(dates)) 
+    assert_that(is.flag(capMinMax))
+    assert_that(is.flag(verbose))
     length(dates) <- min(length(dates), 16)   # can't see anything smaller...
-    stopifnot(require(ggplot2))
+    assert_that(requireNamespace('ggplot2', quietly=T))
     
     # Preliminaries
     lon <- x$lon
     lat <- x$lat
-    val <- x$val
+    val <- as.data.frame(x)
     
     # Filter for Z and time
     if(length(unique(val$Z)) > 1) {

@@ -20,7 +20,7 @@
 #' @note This only works for files that are in domains 'fx', 'mon', or 'yr'.
 #' Decimal time is (year + (month-1)/12).
 #' @note Unfortunately it's impossible to automatically check the time signature for
-#' sub-monthly frequencies quickly without opening the NetCDF file.
+#' sub-monthly frequencies quickly, i.e. without opening the NetCDF file.
 #' @examples
 #' \dontrun{
 #' checkTimePeriod(getFileInfo())
@@ -30,12 +30,12 @@
 checkTimePeriod <- function(fileInfo_df) {
     
     # Sanity checks
-    stopifnot(is.data.frame(fileInfo_df))
+    assert_that(is.data.frame(fileInfo_df))
     ddplyFields <- c("domain", "experiment","model","variable","ensemble")
-    stopifnot(all(ddplyFields %in% colnames(fileInfo_df)))
-    stopifnot("time" %in% colnames(fileInfo_df))
+    assert_that(all(ddplyFields %in% colnames(fileInfo_df)))
+    assert_that("time" %in% colnames(fileInfo_df))
     
-    # Use ddply to break up data frame, process and check time field, and return result
+    # Break up data frame, process and check time field, and return result
     result <- data.frame()
     splitter <- apply( fileInfo_df[, ddplyFields], 1, paste, collapse="-" )
     for(i in unique(splitter)) {

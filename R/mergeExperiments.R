@@ -19,18 +19,19 @@
 mergeExperiments <- function(x, y, verbose=FALSE) {
     
     # Sanity checks
-    stopifnot(class(x)=="cmip5data" & class(y)=="cmip5data")
-    stopifnot(length(verbose)==1 & is.logical(verbose))
+    assert_that(class(x)=="cmip5data")
+    assert_that(class(y)=="cmip5data")
+    assert_that(is.flag(verbose))
     
     if(verbose) cat("Checking that ancillary data are identical\n")
-    stopifnot(identical(x$domain, y$domain))
-    stopifnot(identical(x$variable, y$variable))
-    stopifnot(identical(x$model, y$model))
-    stopifnot(identical(x$valUnit, y$valUnit))
-    stopifnot(identical(x$lon, y$lon))
-    stopifnot(identical(x$lat, y$lat))
-    stopifnot(identical(x$Z, y$Z))
-    stopifnot(identical(x$lev, y$lev))
+    assert_that(identical(x$domain, y$domain))
+    assert_that(identical(x$variable, y$variable))
+    assert_that(identical(x$model, y$model))
+    assert_that(identical(x$valUnit, y$valUnit))
+    assert_that(identical(x$lon, y$lon))
+    assert_that(identical(x$lat, y$lat))
+    assert_that(identical(x$Z, y$Z))
+    assert_that(identical(x$lev, y$lev))
     
     # Ensemble check
     if(identical(x$ensembles, y$ensembles)) {
@@ -42,7 +43,7 @@ mergeExperiments <- function(x, y, verbose=FALSE) {
     
     # Time checks. This is important, and we try to identify obvious problems
     if(verbose) cat("Checking that time data match up\n")
-    stopifnot(identical(x$debug$timeFreqStr, y$debug$timeFreqStr))
+    assert_that(identical(x$debug$timeFreqStr, y$debug$timeFreqStr))
     
     if(mean(x$time) > mean(y$time)) { # switch them
         temp <- x
@@ -67,10 +68,13 @@ mergeExperiments <- function(x, y, verbose=FALSE) {
     if(verbose) cat("Merging\n")
     x <- addProvenance(x, "Merging with another experiment:")
     x$time <- c(x$time, y$time)
-    x$val <- rbind(x$val, y$val)
+    if(is.array(x$val)) {
+        x$val <- abind(x$val, y$val, along=4)
+    } else {
+        x$val <- rbind(x$val, y$val)
+    }
     x$files <- c(x$files, y$files)
     x$experiment <- paste(x$experiment, y$experiment, sep=".")
     x <- addProvenance(x, y)
-    x <- addProvenance(x, "Merge completed")
-    x
+    addProvenance(x, "Merge completed")
 } # mergeExperiments

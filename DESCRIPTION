@@ -7,20 +7,23 @@ Description: Working with CMIP5 data can be tricky, forcing scientists to write
     (iii) average (or apply other mathematical operations) across experimental
     ensembles, (iv) produce both temporal and spatial statistical summaries,
     and (v) produce easy-to-work-with graphical and data summaries.
-Imports: abind (>= 1.4), dplyr (>= 0.3), reshape2 (>= 1.4), digest
+Imports: abind (>= 1.4), dplyr (>= 0.5), assertthat (>= 0.1), digest,
+        Matrix
 Depends: R (>= 3.1.0)
-Suggests: ggplot2 (>= 0.9), ncdf4 (>= 1.9), ncdf (>= 1.6), testthat (>=
-        0.9), knitr
-Version: 1.1
+Suggests: ggplot2 (>= 1.0.1), ncdf4 (>= 1.9), testthat (>= 1.0.2),
+        knitr
+Version: 1.2.0
 Authors@R: c( person("Ben", "Bond-Lamberty", role = c("aut")),
     person("Kathe", "Todd-Brown", role = c("aut", "cre"), email =
     "ktoddbrown@gmail.com") )
 License: MIT + file LICENSE
 VignetteBuilder: knitr
-Packaged: 2014-11-24 16:41:34 UTC; ben
+LazyData: true
+RoxygenNote: 5.0.1
+NeedsCompilation: no
+Packaged: 2016-07-30 13:56:48 UTC; d3x290
 Author: Ben Bond-Lamberty [aut],
   Kathe Todd-Brown [aut, cre]
 Maintainer: Kathe Todd-Brown <ktoddbrown@gmail.com>
-NeedsCompilation: no
 Repository: CRAN
-Date/Publication: 2014-11-24 18:38:50
+Date/Publication: 2016-07-30 18:53:27

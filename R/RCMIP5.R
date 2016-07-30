@@ -17,7 +17,7 @@
 #'   An overview of CMIP5 and the experiment design, Bulletin of the American
 #'   Meteorological Society, 93, 485-498.
 #'   \url{http://dx.doi.org/10.1175/BAMS-D-11-00094.1}
-#' @import dplyr reshape2 digest abind
+#' @import dplyr digest abind assertthat Matrix
 #' @docType package
 #' @name RCMIP5
 NULL
@@ -39,7 +39,9 @@ NULL
 #' @param time logical. Create time dimension?
 #' @param monthly logical. Monthly (if not, annual) data?
 #' @param randomize logical. Random sample data?
+#' @param irregular logical. Irregular lon/lat grid?
 #' @param verbose logical. Print info as we go?
+#' @param loadAs a string identifying possible structures for values. Currently: 'data.frame' and 'array' the only valid options.
 #' @return A cmip5data object, which is a list with the following fields:
 #'  \item{files}{Array of strings containg the file(s) included in this dataset}
 #'  \item{variable}{String containg the variable name described by this dataset}
@@ -76,17 +78,25 @@ cmip5data <- function(x=list(),
                       lonlat=TRUE, lonsize=10, latsize=10,
                       Z=FALSE, Zsize=5,
                       time=TRUE, monthly=TRUE,
-                      randomize=FALSE, verbose=FALSE) {
+                      randomize=FALSE, irregular=FALSE,
+                      verbose=FALSE, loadAs='data.frame') {
     
     # Sanity checks
-    stopifnot(is.numeric(c(lonsize, latsize, Zsize)))
-    stopifnot(is.logical(c(lonlat, Z, time, monthly, randomize)))
+    assert_that(is.flag(lonlat))
+    assert_that(is.numeric(lonsize))
+    assert_that(is.numeric(latsize))
+    assert_that(is.flag(Z))
+    assert_that(is.numeric(Zsize))
+    assert_that(is.flag(time))
+    assert_that(is.flag(monthly))
+    assert_that(is.flag(randomize))
+    assert_that(is.flag(irregular))
+    assert_that(is.flag(verbose))
+    assert_that(loadAs %in% c("data.frame", "array"))
     
-    if (is.list(x)) {          # If x is a list then we are done.
-        # Just cast it directly to a cmip5data object
+    if (is.list(x)) {  # If x is a list then cast it directly to a cmip5data object
         if(verbose) cat("Casting list to cmip5data\n")
         structure(x, class="cmip5data")
-        
     } else if(is.numeric(x)) {  # Create sample data
         if(verbose) cat("Creating new cmip5data\n")
         
@@ -103,10 +113,10 @@ cmip5data <- function(x=list(),
             domain="domain",
             val=NULL,
             valUnit=NULL,
-            lon=NA,
-            lat=NA,
-            Z=NA,
-            time=NA,
+            lon=NULL,
+            lat=NULL,
+            Z=NULL,
+            time=NULL,
             dimNames=NULL
         )
         
@@ -119,6 +129,13 @@ cmip5data <- function(x=list(),
             # realistic lon (0 to 360) and lat (-90 to 90) numbers
             result$lon <- 360/lonsize * c(0:(lonsize-1))  + 360/lonsize/2
             result$lat <- 180/latsize * c(0:(latsize-1)) - 90 + 180/latsize/2
+            # Convert to two dimensions
+            result$lon <- array(result$lon, dim=c(lonsize, latsize))
+            result$lat <- array(rep(result$lat, 1, each=lonsize), dim=c(lonsize, latsize))
+            if(irregular) {
+                result$lon <- result$lon + round(runif(lonsize * latsize), 1)
+                result$lat <- result$lat + round(runif(lonsize * latsize), 1)
+            }
             result$dimNames=c("lon", "lat")
             debug$lonUnit <- "degrees_east"
             debug$latUnit <- "degrees_north"
@@ -164,27 +181,30 @@ cmip5data <- function(x=list(),
             result$domain <- "fx"
         }
         
-        # Make data frame, fill it with fake data, wrap as tbl_df
-        result$val <- expand.grid(lon=result$lon, lat=result$lat,
-                                  Z=result$Z, time=result$time)
-        if(randomize) {
-            result$val$value <- runif(n=nrow(result$val))
-        } else {
-            result$val$value <- 1
-        }      
-        result$val <- tbl_df(result$val)
+        # Create the data array
+        finalDim <- c(max(1, length(result$lon[,1])), 
+                      max(1, length(result$lat[1,])),
+                      max(1, length(result$Z)), 
+                      max(1, length(result$time)))
         
+        if(randomize) {
+            result$val <- runif(n=prod(finalDim))
+        } else {
+            result$val <- rep(1, prod(finalDim))
+        } 
+        dim(result$val) <- finalDim
+        
+        # Miscellany
         result$valUnit <- "unit"
         result$debug <- debug
         
-        # Change any NA dimension (was needed for expand.grid above) to NULL
-        if(all(is.na(result$lon))) result$lon <- NULL
-        if(all(is.na(result$lat))) result$lat <- NULL
-        if(all(is.na(result$Z))) result$Z <- NULL
-        if(all(is.na(result$time))) result$time <- NULL
-        
         # Add debug info and set class
         result <- structure(result, class="cmip5data")
+        
+        # Convert to data frame representation, if requested
+        if(loadAs == 'data.frame') {
+            result$val <- convert_array_to_df(result, verbose)
+        }
         
         # Initialize provenance and return
         addProvenance(result, "Dummy data created")
@@ -203,14 +223,14 @@ cmip5data <- function(x=list(),
 #' @keywords internal
 print.cmip5data <- function(x, ...) {
     
-    if(is.null(x$variable)) {
+    if(all(unlist(lapply(x, is.null)))) {
         cat("(Empty cmip5data object)")
         return()
     }
     
     ansStr <- paste0('CMIP5: ', x$variable, ", ", x$model, " ", x$experiment)
     
-    spaceStr <- paste(length(x$lon), "x", length(x$lat), "x", length(x$Z))
+    spaceStr <- paste(dim(x$lon)[1], "x", dim(x$lat)[2], "x", length(x$Z), "x", length(x$time))
     ansStr <- paste0(ansStr, ", ", spaceStr)
     
     timeStr <- "no time"
@@ -280,15 +300,23 @@ summary.cmip5data <- function(object, ...) {
     #        ans$type <- paste(ans$type, "(regridded)")
     #    }
     
-    ans$spatial <- paste0("lon [", length(object$lon),
-                          "] lat [", length(object$lat),
+    ans$spatial <- paste0("lon [", dim(object$lon)[1],
+                          "] lat [", dim(object$lat)[2],
                           "] Z [", length(object$Z), "]")
     
     ans$time <- paste0(object$debug$timeFreqStr, " [", length(object$time), "] ", object$debug$timeUnit)
     ans$size <- as.numeric(object.size(object))
-    ans$valsummary <- c(min(object$val$value, na.rm=TRUE),
-                        mean(object$val$value, na.rm=TRUE),
-                        max(object$val$value, na.rm=TRUE))
+    if(is.array(object$val)) {
+        ans$valsummary <- c(min(object$val, na.rm=TRUE),
+                            mean(object$val, na.rm=TRUE),
+                            max(object$val, na.rm=TRUE))
+    } else {
+        ans$valsummary <- c(min(object$val$value, na.rm=TRUE),
+                            mean(object$val$value, na.rm=TRUE),
+                            max(object$val$value, na.rm=TRUE))
+        #} else {
+        #    stop('Class of value is not recognized.')
+    }
     ans$provenance <- object$provenance
     
     return(ans)
@@ -305,8 +333,7 @@ summary.cmip5data <- function(object, ...) {
 print.summary.cmip5data <- function(x, ...) {
     cat(x$type, "\n")
     cat("Variable: ", x$variable, " (", x$valUnit, ") from model ", x$model, "\n", sep="")
-    cat("Data range: ", round(x$valsummary[1], 2), "-", round(x$valsummary[3], 2),
-        "  Mean: ", round(x$valsummary[2], 2), "\n", sep="")
+    cat(sprintf("Data range: %.2g to %.2g Mean: %.2g\n", x$valsummary[1], x$valsummary[3],  x$valsummary[2]))
     cat("Experiment:", x$experiment, "-", length(x$ensembles), "ensemble(s)\n")
     cat("Spatial dimensions:", x$spatial, "\n")
     cat("Time dimension:", x$time, "\n")
@@ -320,12 +347,21 @@ print.summary.cmip5data <- function(x, ...) {
 #' @param ... Other parameters
 #' @param originalNames logical. Use original dimension names from file?
 #' @return The object converted to a data frame
+#' @method as.data.frame cmip5data
 #' @export
 #' @keywords internal
 as.data.frame.cmip5data <- function(x, ..., originalNames=FALSE) {
-    # Suppress stupid NOTEs from R CMD CHECK
-    lon <- lat <- Z <- time <- NULL
-    dplyr::arrange(x$val, lon, lat, Z, time)
+    
+    # Sanity checks
+    assert_that(is.flag(originalNames))
+    
+    if(is.array(x$val)) {
+        convert_array_to_df(x) 
+    } else {
+        # Suppress stupid NOTEs from R CMD CHECK
+        lon <- lat <- Z <- time <- NULL
+        dplyr::arrange(x$val, lon, lat, Z, time)  
+    }
 } # as.data.frame.cmip5data
 
 #' Convert a cmip5data object to an array
@@ -334,25 +370,33 @@ as.data.frame.cmip5data <- function(x, ..., originalNames=FALSE) {
 #' @param ... Other parameters
 #' @param drop logical. Drop degenerate dimensions?
 #' @return The object converted to an array
+#' @method as.array cmip5data
 #' @export
 #' @keywords internal
 as.array.cmip5data <- function(x, ..., drop=TRUE) {
     
-    dimList <- c(length(unique(x$val$lon)),
-                 length(unique(x$val$lat)),
-                 length(unique(x$val$Z)),
-                 length(unique(x$val$time)))
+    # Sanity checks
+    assert_that(is.flag(drop))
     
-    # Remove degenerate dimensions
-    if(drop) {
-        dimList <- dimList[!dimList %in% 1]        
+    if(is.array(x$val)) {
+        adrop(x$val, drop=drop)
+    } else {
+        dimList <- c(length(unique(x$val$lon)),
+                     length(unique(x$val$lat)),
+                     length(unique(x$val$Z)),
+                     length(unique(x$val$time)))
+        
+        # Remove degenerate dimensions
+        if(drop) {
+            dimList <- dimList[!dimList %in% 1]        
+        }
+        
+        # Suppress stupid NOTEs from R CMD CHECK
+        lon <- lat <- Z <- time <- NULL
+        
+        # Note we sort data frame before converting to array!
+        array(dplyr::arrange(x$val, time, Z, lat, lon)$value, dim=dimList)
     }
-    
-    # Suppress stupid NOTEs from R CMD CHECK
-    lon <- lat <- Z <- time <- NULL
-    
-    # Note we sort data frame before converting to array!
-    array(dplyr::arrange(x$val, lon, lat, Z, time)$value, dim=dimList)
 } # as.array.cmip5data
 
 #' Make package datasets and write them to disk.
@@ -365,8 +409,15 @@ as.array.cmip5data <- function(x, ..., drop=TRUE) {
 #' @note This is an internal RCMIP5 function and not exported.
 #' @keywords internal
 makePackageData <- function(path="./sampledata", maxSize=Inf, outpath="./data") {
+    
+    # Sanity checks
+    assert_that(is.dir(path))
+    assert_that(is.readable(path))
+    assert_that(is.numeric(maxSize))
     if(!file.exists(outpath)) dir.create(outpath)
-    stopifnot(file.exists(outpath))
+    assert_that(is.dir(outpath))
+    assert_that(is.writeable(outpath))
+    
     datasets <- getFileInfo(path)
     if(is.null(datasets)) return()
     
@@ -386,3 +437,53 @@ makePackageData <- function(path="./sampledata", maxSize=Inf, outpath="./data") 
         }
     }
 } # makePackageData
+
+#' Alternative weighted mean
+#'
+#' @param x vector of data
+#' @param w vector of weights
+#' @param na.rm Remove NAs in both data and weights?
+#' @return Weighted mean of \code{x}, using weights \code{d}.
+#' @details The \code{stats} version of weighted.mean doesn't handle weights in a very 
+#' useful way. Specifically, it will remove missing \code{x} values, but not missing weights.
+#' A fair number of CMIP5 models have \code{NA} values in their grid areas, so this will
+#' quickly cause problems. This function removes (if \code{na.rm=TRUE}) missing observations
+#' and weights before computing the weighted mean.
+#' @export
+#' @seealso \code{\link{weighted.mean}}
+cmip5.weighted.mean <- function(x, w=rep(1, length(x)), na.rm=TRUE) {
+    assert_that(length(x) == length(w))
+    na <- FALSE
+    if(na.rm) na <- is.na(x) | is.na(w)
+    sum((x*w)[!na]) / sum(w[!na])
+} # cmip5.weighted.mean
+
+#' Return data values
+#'
+#' @param x A \code{\link{cmip5data}} object
+#' @return Data values in \code{x}.
+#' @details Abstracts away getting values, the method for which
+#' varies depending on backend implementation.
+#' @keywords internal
+#' @note This is an internal RCMIP5 function and not exported.
+vals <- function(x) {
+    assert_that(class(x)=="cmip5data")
+    if(is.data.frame(x$val)) {
+        x$val$value
+    } else if(is.array(x$val)) {
+        as.numeric(x$val)
+    } else
+        stop("Unknown data implementation")
+} # vals
+
+#' Return number of data values
+#'
+#' @param x A \code{\link{cmip5data}} object
+#' @return Number of data values in \code{x}.
+#' @details Abstracts away getting number of values, the method for which
+#' varies depending on backend implementation.
+#' @keywords internal
+#' @note This is an internal RCMIP5 function and not exported.
+nvals <- function(x) {
+    length(vals(x))
+} # nvals

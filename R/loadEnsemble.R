@@ -11,8 +11,9 @@
 #' @param path optional root of directory tree
 #' @param recursive logical. Recurse into directories?
 #' @param verbose logical. Print info as we go?
-#' @param force.ncdf Force use of the less-desirable ncdf package for testing?
+#' @param force.ncdf [[decrepit]] Force use of the less-desirable ncdf package for testing? 
 #' @param yearRange numeric of length 2. If supplied, load only these years of data inclusively between these years.
+#' @param ZRange numeric of length 2. If supplied, load only Z data within this range.
 #' @return A \code{\link{cmip5data}} object, or \code{NULL} if nothing loaded
 #' @details This function is the core of RCMIP5's data-loading. It loads all files matching
 #' the experiment, variable, model, ensemble, and domain supplied by the caller.
@@ -22,41 +23,32 @@
 #' @keywords internal
 loadEnsemble <- function(variable, model, experiment, ensemble, domain,
                          path='.', recursive=TRUE, verbose=FALSE, force.ncdf=FALSE,
-                         yearRange=NULL) {
+                         yearRange=NULL, ZRange=NULL) {
     
     # Sanity checks - make sure all parameters are correct class and length
-    stopifnot(length(variable)==1 & is.character(variable))
-    stopifnot(length(model)==1 & is.character(model))
-    stopifnot(length(experiment)==1 & is.character(experiment))
-    stopifnot(length(ensemble)==1 & is.character(ensemble))
-    stopifnot(length(domain)==1 & is.character(domain))
-    stopifnot(length(path)==1 & is.character(path)) # valid path?
-    stopifnot(file.exists(path))
-    stopifnot(length(recursive)==1 & is.logical(recursive))
-    stopifnot(length(verbose)==1 & is.logical(verbose))
-    stopifnot(length(force.ncdf)==1 & is.logical(force.ncdf))
-    stopifnot(is.null(yearRange) | length(yearRange)==2 & is.numeric(yearRange))
+    assert_that(length(variable)==1 & is.character(variable))
+    assert_that(length(model)==1 & is.character(model))
+    assert_that(length(experiment)==1 & is.character(experiment))
+    assert_that(length(ensemble)==1 & is.character(ensemble))
+    assert_that(length(domain)==1 & is.character(domain))
+    assert_that(is.dir(path))
+    assert_that(is.readable(path))
+    assert_that(is.flag(recursive))
+    assert_that(is.flag(verbose))
+    assert_that(is.flag(force.ncdf))
+    assert_that(is.null(yearRange) | length(yearRange)==2 & is.numeric(yearRange))
+    assert_that(is.null(ZRange) | length(ZRange)==2 & is.numeric(ZRange))
     
-    # We prefer to use the 'ncdf4' package, but Windows has problems with this,
-    # ...so if it's not installed can also use 'ncdf'
-    if(force.ncdf | !require(ncdf4, quietly=!verbose)) {
-        if(require(ncdf, quietly=!verbose)) {
-            # The ncdf and ncdf4 functions are mostly parameter-identical.
-            # ...This makes things easy: we redefine the ncdf4 function
-            # ...names to their ncdf equivalents
-            .nc_open <- ncdf::open.ncdf
-            .ncatt_get <- ncdf::att.get.ncdf
-            .ncvar_get <- ncdf::get.var.ncdf
-            .nc_close <- ncdf::close.ncdf
-        } else {
-            stop("No NetCDF (either 'ncdf4' or 'ncdf') package is available")
-        }
-    } else {
-        .nc_open <- ncdf4::nc_open
-        .ncatt_get <- ncdf4::ncatt_get
-        .ncvar_get <- ncdf4::ncvar_get
-        .nc_close <- ncdf4::nc_close
+    # We prefer to use the 'ncdf4' package, but if not installed can use 'ncdf'
+    if(force.ncdf) {
+       warning('force.ncdf is ignored now. ncdf4 is a required package')
     }
+    requireNamespace('ncdf4', quietly=!verbose)
+    .nc_open <- ncdf4::nc_open
+    .ncatt_get <- ncdf4::ncatt_get
+    .ncvar_get <- ncdf4::ncvar_get
+    .nc_close <- ncdf4::nc_close
+    
     
     # List all files that match specifications
     fileList <- list.files(path=path, full.names=TRUE, recursive=recursive)
@@ -124,7 +116,7 @@ loadEnsemble <- function(variable, model, experiment, ensemble, domain,
     }
     
     # Go through and load the data
-    val <- c() # variable to temporarily holds main data
+    val <- c() # variable to temporarily hold main data
     timeRaw <- c()
     timeArr <- c()
     ZUnit <- NULL
@@ -143,7 +135,7 @@ loadEnsemble <- function(variable, model, experiment, ensemble, domain,
         # Get dimension names for 'variable'
         dimNames <- unlist(lapply(nc$var[[variable]]$dim, FUN=function(x) { x$name }))
         if(verbose) cat("-", variable, "dimension names:", dimNames, "\n")
-        stopifnot(length(dimNames) %in% c(1, 2, 3, 4)) # that's all we know
+        assert_that(length(dimNames) %in% c(1, 2, 3, 4)) # that's all we know
         
         # Most, but not all, files have longitude and latitude. Load if available.
         lonArr <- NULL
@@ -159,13 +151,19 @@ loadEnsemble <- function(variable, model, experiment, ensemble, domain,
             
             lonArr <- .ncvar_get(nc, varid=dimNames[1])
             lonUnit <- .ncatt_get(nc, dimNames[1], 'units')$value
+            lonLen <- ifelse(length(dim(lonArr)) > 1, dim(lonArr)[1], length(lonArr))
+            
             latArr <- .ncvar_get(nc, varid=dimNames[2])
             latUnit <- .ncatt_get(nc, dimNames[2], 'units')$value
+            latLen <- ifelse(length(dim(latArr)) > 1, dim(latArr)[1], length(latArr))
             
-            # Some models provide two-dimensional arrays of their lon and lat values.
-            # (Looking at you, GFDL.) If this occurs, strip down to 1
-            if(length(dim(lonArr)) > 1) lonArr <- as.vector(lonArr[,1])
-            if(length(dim(latArr)) > 1) latArr <- as.vector(latArr[1,])
+            # Some models provide 1-D arrays, some 2-D. Convert all to the latter
+            if(length(dim(lonArr)) < 2) {
+                lonArr <- array(lonArr, dim=c(lonLen, latLen))
+            }
+            if(length(dim(latArr)) < 2) {
+                latArr <- array(rep(latArr, 1, each=lonLen), dim=c(lonLen, latLen))
+            }
         }
         
         # Get the time frequency. Note that this should be related to
@@ -190,7 +188,7 @@ loadEnsemble <- function(variable, model, experiment, ensemble, domain,
                 calendarDayLength <- 365
             }
             
-            # Extract the year we are references in calendar
+            # Extract the year we are referencing in calendar
             # Set the default to year 1, month 1, day 1, hour 0, min 0, sec 0
             defaultCalendarArr <- c(1, 1, 1, 0, 0, 0)
             
@@ -201,7 +199,7 @@ loadEnsemble <- function(variable, model, experiment, ensemble, domain,
             
             # Check that the time is going to be in days otherwise latter
             # ...calculations for time array break
-            stopifnot(any(grepl('day', calendarArr)))
+            assert_that(any(grepl('day', calendarArr)))
             
             # extract just the digits
             calendarArr <- as.numeric(calendarArr[grepl('^\\d+$', calendarArr)])
@@ -219,6 +217,9 @@ loadEnsemble <- function(variable, model, experiment, ensemble, domain,
             
             # Load the actual time
             thisTimeRaw <- .ncvar_get(nc, varid=timeName)
+            attributes(thisTimeRaw) <- NULL
+            assert_that(!any(duplicated(thisTimeRaw)))
+            
             # convert from days (we assume the units are days) to years
             thisTimeArr <- thisTimeRaw / calendarDayLength + startYr
         } else { # this is a fx variable. Set most things to NULL
@@ -237,18 +238,47 @@ loadEnsemble <- function(variable, model, experiment, ensemble, domain,
         ZArr <- NULL
         if(length(dimNames) == 4) {
             ZArr <- .ncvar_get(nc, varid=dimNames[3])
+            attributes(ZArr) <- NULL
             ZUnit <- .ncatt_get(nc, dimNames[3], 'units')$value
+            assert_that(!any(duplicated(ZArr)))
+        }
+        
+        # Construct the 'start' and 'count' arrays for ncvar_get below
+        # (See ncvar_get documentation for what these mean.)
+        ndims <- nc$var[[variable]]$ndims
+        start <- rep(1, ndims)
+        count <- rep(-1, ndims)
+        
+        # If ZRange supplied, calculate filter for the data load below
+        # Note this is above the yearRange check so ZArr data don't get erased
+        # by loading subsequent files with no data
+        if(!is.null(ZRange) & !is.null(ZArr)) {
+            Zinrange <- min(ZRange) <= ZArr & max(ZRange) >= ZArr
+            if(any(Zinrange)) {
+                zstart <- min(which(Zinrange))
+                zend <- max(which(Zinrange))
+                # Modify the 'start' and 'count' arrays for ncvar_get below
+                ndims <- nc$var[[variable]]$ndims
+                start[ndims-1] <- zstart
+                count[ndims-1] <- zend - zstart + 1
+                ZArr <- ZArr[Zinrange]
+                if(verbose) cat("- loading only Z values", zstart, "-", zend, "\n")            
+            } else {
+                if(verbose) cat("- skipping file because not in ZRange\n")
+                .nc_close(nc)
+                next
+            }
         }
         
         # If yearRange supplied, calculate filter for the data load below
-        start <- NA
-        count <- NA
         if(!is.null(yearRange) & !is.null(thisTimeArr)) {
             # User has requested to load a temporal subset of the data.
             # First question: does this file overlap at all?
+            yearRange <- sapply(yearRange, floor) # strip off any decimals
             if(min(yearRange) > max(floor(thisTimeArr)) |
                    max(yearRange) < min(floor(thisTimeArr))) {
                 if(verbose) cat("- skipping file because not in yearRange\n")
+                .nc_close(nc)
                 next
             }
             
@@ -260,11 +290,9 @@ loadEnsemble <- function(variable, model, experiment, ensemble, domain,
             tend <- match(max(yearRange)+1, floor(thisTimeArr)) - 1
             if(is.na(tend)) tend <- length(thisTimeArr)
             
-            # Construct the 'start' and 'count' arrays for ncvar_get below
-            # (See ncvar_get documentation for what these mean.)
-            ndims <- nc$var[[variable]]$ndims
-            start <- c(rep(1, ndims-1), tstart)
-            count <- c(rep(-1, ndims-1), tend-tstart+1)
+            # Modify the 'start' and 'count' arrays for ncvar_get below
+            start[ndims] <- tstart
+            count[ndims] <- tend-tstart+1
             if(verbose) cat("- loading only timeslices", tstart, "-",tend, "\n")
             
             # Trim the already-loaded time arrays to match
@@ -274,13 +302,18 @@ loadEnsemble <- function(variable, model, experiment, ensemble, domain,
         
         # Update running time data
         if(!is.null(thisTimeRaw)) {
+            # Any overlap between this file's time array and previous data?
+            if(!is.null(timeArr) && min(thisTimeArr) < max(timeArr)) {
+                stop("Time overlap between files; this should not occur")
+            }
+            
             timeRaw <- c(timeRaw, thisTimeRaw)
             timeArr <- c(timeArr, thisTimeRaw / calendarDayLength + startYr)
         }
         
         # Finally, load the actual data and its units
         vardata <- .ncvar_get(nc, varid=variable, start=start, count=count)
-        if(verbose) cat("- data", dim(vardata), "\n")
+        if(verbose) cat("- data", paste(dim(vardata), collapse=" x "), "\n")
         valUnit <- .ncatt_get(nc, variable, 'units')$value  # load units
         loadedFiles <- c(loadedFiles, basename(fileStr))
         
@@ -293,8 +326,8 @@ loadEnsemble <- function(variable, model, experiment, ensemble, domain,
         
         # Test that spatial dimensions are identical across files
         if(length(val) > 0 & length(dimNames) > 2) {
-            stopifnot(all(dim(val)[1:(length(dim(val))-1)] ==
-                              dim(vardata)[1:(length(dim(vardata))-1)]))
+            assert_that(all(dim(val)[1:(length(dim(val))-1)] ==
+                                dim(vardata)[1:(length(dim(vardata))-1)]))
         }
         
         # Bind the main variable along time dimension to previously loaded data
@@ -306,8 +339,10 @@ loadEnsemble <- function(variable, model, experiment, ensemble, domain,
     } # for filenames
     
     # If nothing loaded...
-    if(length(val) == 0) return(NULL)
-    
+    if(length(val) == 0){
+        warning('Nothing was found, returning NULL')
+        return(NULL)
+    }
     x <- cmip5data(list(files=loadedFiles, val=unname(val), valUnit=valUnit,
                         lat=latArr, lon=lonArr, Z=ZArr, time=timeArr,
                         variable=variable, model=model, domain=domain,
